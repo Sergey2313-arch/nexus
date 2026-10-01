@@ -27,6 +27,7 @@ namespace NEXUS
             mainWindow.InitializePageEnhancements();
             mainWindow.InitializeExtraTools();
             mainWindow.InitializeLogbookGrouping();
+            mainWindow.InitializePlannerV2();
 
             _window = mainWindow;
             _window.Activate();
