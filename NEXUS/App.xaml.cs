@@ -33,6 +33,7 @@ namespace NEXUS
             mainWindow.InitializeSecurityAuditUI();
             mainWindow.InitializeFullSystemReportUI();
             mainWindow.InitializeFullReportAssistantBridge();
+            mainWindow.InitializeTelemetryHistory();
 
             _window = mainWindow;
             _window.Activate();
