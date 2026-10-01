@@ -3,9 +3,6 @@ name: NEXUS Windows Build
 on:
   pull_request:
     branches: [ master ]
-  push:
-    branches:
-      - nexus-009-security-diagnostics
 
 jobs:
   build:
