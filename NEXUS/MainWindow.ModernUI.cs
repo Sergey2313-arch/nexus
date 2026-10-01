@@ -11,8 +11,10 @@ namespace NEXUS
     {
         private ComboBox? _topLanguageCombo;
         private ComboBox? _settingsLanguageCombo;
+        private TextBlock? _topSectionText;
         private DispatcherTimer? _localizationRefreshTimer;
         private readonly List<Button> _modernNavigationButtons = new();
+        private string _selectedNavigationKey = "Dashboard";
         private bool _languageSync;
         private bool _modernUiInitialized;
 
@@ -99,8 +101,6 @@ namespace NEXUS
 
                     if (topBar.Child is StackPanel topMenu)
                     {
-                        topMenu.Spacing = 6;
-                        topMenu.Margin = new Thickness(18, 0, 18, 0);
                         foreach (Button button in topMenu.Children.OfType<Button>().ToList())
                             ModernizeNavigationButton(button, false);
                     }
@@ -185,6 +185,8 @@ namespace NEXUS
 
         private void SelectNavigationVisual(string key)
         {
+            _selectedNavigationKey = key;
+
             foreach (Button button in _modernNavigationButtons)
             {
                 bool selected = button.Tag is string tag &&
@@ -195,6 +197,9 @@ namespace NEXUS
                     : new SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
                 button.Foreground = selected ? Brush(239, 242, 248) : Brush(194, 198, 207);
             }
+
+            if (_topSectionText != null)
+                _topSectionText.Text = LocalizationService.T("Nav." + key);
         }
 
         private void BuildLanguageControls(Grid root)
@@ -210,14 +215,37 @@ namespace NEXUS
             if (topBar?.Child is not StackPanel oldMenu)
                 return;
 
+            // Старые дублирующие вкладки больше не показываем: основная навигация
+            // находится слева, а верхняя панель теперь показывает текущий раздел.
             topBar.Child = null;
 
             Grid topGrid = new();
             topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            Grid.SetColumn(oldMenu, 0);
-            topGrid.Children.Add(oldMenu);
+            StackPanel section = new()
+            {
+                Spacing = 1,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(22, 0, 0, 0)
+            };
+            section.Children.Add(new TextBlock
+            {
+                Text = "NEXUS CONTROL CENTER",
+                Foreground = Brush(104, 109, 120),
+                FontSize = 10,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+
+            _topSectionText = new TextBlock
+            {
+                Text = LocalizationService.T("Nav.Dashboard"),
+                FontSize = 18,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            };
+            section.Children.Add(_topSectionText);
+            Grid.SetColumn(section, 0);
+            topGrid.Children.Add(section);
 
             StackPanel right = new()
             {
@@ -321,6 +349,7 @@ namespace NEXUS
                 int languageIndex = LocalizationService.CurrentLanguage == NexusLanguage.English ? 1 : 0;
                 if (_topLanguageCombo != null) _topLanguageCombo.SelectedIndex = languageIndex;
                 if (_settingsLanguageCombo != null) _settingsLanguageCombo.SelectedIndex = languageIndex;
+                if (_topSectionText != null) _topSectionText.Text = LocalizationService.T("Nav." + _selectedNavigationKey);
 
                 foreach (TextBlock text in FindDescendants<TextBlock>(root))
                 {
