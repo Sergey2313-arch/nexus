@@ -31,6 +31,8 @@ namespace NEXUS
             mainWindow.InitializeSafeMaintenanceCleanup();
             mainWindow.InitializeLifecycleGuards();
             mainWindow.InitializeSecurityAuditUI();
+            mainWindow.InitializeFullSystemReportUI();
+            mainWindow.InitializeFullReportAssistantBridge();
 
             _window = mainWindow;
             _window.Activate();
