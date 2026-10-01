@@ -24,6 +24,7 @@ namespace NEXUS
             ["Nav.Security"] = new("Безопасность", "Security"),
             ["Nav.Maintenance"] = new("Обслуживание", "Maintenance"),
             ["Nav.AI"] = new("ИИ-помощник", "AI Assistant"),
+            ["Nav.AIShort"] = new("ИИ", "AI"),
             ["Nav.Settings"] = new("Настройки", "Settings"),
 
             ["Dashboard.Title"] = new("Главная", "Dashboard"),
@@ -111,7 +112,21 @@ namespace NEXUS
             ["Security.Audit"] = new("АУДИТ WINDOWS SECURITY", "WINDOWS SECURITY AUDIT"),
             ["Security.Integrity"] = new("КОНТРОЛЬ ЦЕЛОСТНОСТИ", "INTEGRITY BASELINE"),
             ["Security.ProcessTrust"] = new("ДОВЕРИЕ К ПРОЦЕССАМ", "PROCESS TRUST INSPECTOR"),
-            ["Security.Activity"] = new("СЛУЖБЫ И СЕТЕВАЯ АКТИВНОСТЬ", "SERVICES & NETWORK ACTIVITY")
+            ["Security.Activity"] = new("СЛУЖБЫ И СЕТЕВАЯ АКТИВНОСТЬ", "SERVICES & NETWORK ACTIVITY"),
+
+            ["Live.DiskCritical"] = new("⚠ Критично: мало свободного места", "⚠ Critical: low free disk space"),
+            ["Live.DiskWarning"] = new("⚠ Внимание: диск почти заполнен", "⚠ Warning: disk is almost full"),
+            ["Live.DiskNormal"] = new("✓ Состояние диска нормальное", "✓ Disk status is normal"),
+            ["Live.DiskError"] = new("Не удалось получить данные диска", "Unable to read disk data"),
+            ["Live.TempHigh"] = new("⚠ Высокая температура", "⚠ High temperature"),
+            ["Live.TempElevated"] = new("⚠ Повышенная температура", "⚠ Elevated temperature"),
+            ["Live.TempNormal"] = new("✓ Температура нормальная", "✓ Temperature is normal"),
+            ["Live.CpuSensorUnavailable"] = new("Датчик CPU недоступен", "CPU temperature sensor unavailable"),
+            ["Live.StorageMissing"] = new("Накопитель не обнаружен", "Storage device not detected"),
+            ["Live.StorageCritical"] = new("⚠ КРИТИЧНО", "⚠ CRITICAL"),
+            ["Live.StorageWarning"] = new("⚠ ВНИМАНИЕ", "⚠ WARNING"),
+            ["Live.StorageLowSpace"] = new("✓ SSD исправен • мало места", "✓ SSD healthy • low free space"),
+            ["Live.SmartUnavailable"] = new("SMART данные недоступны", "SMART data unavailable")
         };
 
         public static NexusLanguage CurrentLanguage { get; private set; } = NexusLanguage.Russian;
@@ -176,6 +191,35 @@ namespace NEXUS
 
             translated = value;
             return false;
+        }
+
+        public static string TranslateDynamic(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            if (TryTranslateLiteral(value, out string exact))
+                return exact;
+
+            if (CurrentLanguage == NexusLanguage.Russian)
+            {
+                return value
+                    .Replace("Temperature: unavailable", "Температура: недоступна", StringComparison.OrdinalIgnoreCase)
+                    .Replace("Temperature:", "Температура:", StringComparison.OrdinalIgnoreCase)
+                    .Replace("Read:", "Прочитано:", StringComparison.OrdinalIgnoreCase)
+                    .Replace("Written:", "Записано:", StringComparison.OrdinalIgnoreCase)
+                    .Replace(" processes", " процессов", StringComparison.OrdinalIgnoreCase)
+                    .Replace(" events", " событий", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return value
+                .Replace("Температура: недоступна", "Temperature: unavailable", StringComparison.OrdinalIgnoreCase)
+                .Replace("Температура:", "Temperature:", StringComparison.OrdinalIgnoreCase)
+                .Replace("Прочитано:", "Read:", StringComparison.OrdinalIgnoreCase)
+                .Replace("Записано:", "Written:", StringComparison.OrdinalIgnoreCase)
+                .Replace(" процессов", " processes", StringComparison.OrdinalIgnoreCase)
+                .Replace(" событий", " events", StringComparison.OrdinalIgnoreCase)
+                .Replace(" ч", " h", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
