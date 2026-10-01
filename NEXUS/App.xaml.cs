@@ -18,6 +18,7 @@ namespace NEXUS
         {
             MainWindow mainWindow = new();
             mainWindow.InitializeDiagnosticsUI();
+            mainWindow.InitializeCompromiseUI();
 
             _window = mainWindow;
             _window.Activate();
