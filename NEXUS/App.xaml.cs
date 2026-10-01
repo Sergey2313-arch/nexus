@@ -26,6 +26,7 @@ namespace NEXUS
             // Дополнительные функции интерфейса.
             mainWindow.InitializePageEnhancements();
             mainWindow.InitializeExtraTools();
+            mainWindow.InitializeLogbookGrouping();
 
             _window = mainWindow;
             _window.Activate();
