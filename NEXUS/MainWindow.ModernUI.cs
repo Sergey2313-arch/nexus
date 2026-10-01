@@ -215,8 +215,8 @@ namespace NEXUS
             if (topBar?.Child is not StackPanel oldMenu)
                 return;
 
-            // Старые дублирующие вкладки больше не показываем: основная навигация
-            // находится слева, а верхняя панель теперь показывает текущий раздел.
+            // Верхняя панель теперь не дублирует левую навигацию: она показывает
+            // текущий раздел и глобальные элементы состояния/локализации.
             topBar.Child = null;
 
             Grid topGrid = new();
@@ -393,6 +393,16 @@ namespace NEXUS
                     string placeholder = combo.PlaceholderText ?? "";
                     if (LocalizationService.TryTranslateLiteral(placeholder, out string translated))
                         combo.PlaceholderText = translated;
+
+                    foreach (object item in combo.Items)
+                    {
+                        if (item is ComboBoxItem comboItem &&
+                            comboItem.Content is string itemText &&
+                            LocalizationService.TryTranslateLiteral(itemText, out string itemTranslation))
+                        {
+                            comboItem.Content = itemTranslation;
+                        }
+                    }
                 }
 
                 foreach (CalendarDatePicker picker in FindDescendants<CalendarDatePicker>(root))
