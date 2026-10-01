@@ -249,12 +249,9 @@ namespace NEXUS
         {
             try
             {
-                string folder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "NEXUS");
-                Directory.CreateDirectory(folder);
+                Directory.CreateDirectory(NexusDataFolder);
 
-                string path = Path.Combine(folder, "planner-export.txt");
+                string path = Path.Combine(NexusDataFolder, "planner-export.txt");
                 List<string> lines = new()
                 {
                     "NEXUS PLANNER",
@@ -389,7 +386,12 @@ namespace NEXUS
                 .FirstOrDefault(button => button.Content?.ToString() == "Отправить");
 
             if (send != null)
+            {
+                // Заменяем старый минимальный обработчик на расширенный,
+                // чтобы запрос не очищался до того, как его увидят новые команды.
+                send.Click -= AssistantSendButton_Click;
                 send.Click += EnhancedAssistantSend_Click;
+            }
         }
 
         private void EnhancedAssistantSend_Click(object sender, RoutedEventArgs e)
@@ -401,6 +403,8 @@ namespace NEXUS
             if (string.IsNullOrWhiteSpace(query))
                 return;
 
+            string answer;
+
             if (query.Contains("процесс"))
             {
                 List<(string Name, long Memory)> top = new();
@@ -411,7 +415,7 @@ namespace NEXUS
                     finally { process.Dispose(); }
                 }
 
-                _assistantOutputText.Text = "Больше всего RAM используют:\n" +
+                answer = "Больше всего RAM используют:\n" +
                     string.Join("\n", top.OrderByDescending(item => item.Memory)
                         .Take(5)
                         .Select(item => $"• {item.Name}: {FormatBytes(item.Memory)}"));
@@ -425,7 +429,7 @@ namespace NEXUS
                     .Take(5)
                     .Select(item => "• " + item.Text));
 
-                _assistantOutputText.Text = active == 0
+                answer = active == 0
                     ? "В Planner сейчас нет активных задач."
                     : $"Активных задач: {active}\n{tasks}";
             }
@@ -439,16 +443,52 @@ namespace NEXUS
                     .Take(5)
                     .ToList();
 
-                _assistantOutputText.Text = important.Count == 0
+                answer = important.Count == 0
                     ? $"Hardware score: {report.Score}/100. Явных предупреждений сейчас нет."
                     : $"Hardware score: {report.Score}/100\n" +
                       string.Join("\n", important.Select(item => $"• {item.Title}: {item.Recommendation}"));
             }
             else if (query.Contains("безопас") || query.Contains("security"))
             {
-                _assistantOutputText.Text =
+                answer =
                     "Security вынесен в отдельный отдел. Запусти QUICK SECURITY SCAN для проверки файлов, автозагрузки, Scheduled Tasks, служб и других признаков компрометации.";
             }
+            else if (query.Contains("диск") || query.Contains("ssd"))
+            {
+                answer =
+                    $"Диск C: {DiskValueText.Text}. {DiskStatusText.Text}\n" +
+                    $"SSD: {StorageNameText.Text}, {StorageTempText.Text}, ресурс {StorageHealthText.Text}.";
+            }
+            else if (query.Contains("температур") || query.Contains("гре"))
+            {
+                answer =
+                    $"CPU: {CpuTempText.Text} ({CpuTempStatusText.Text})\n" +
+                    $"GPU: {GpuTempText.Text}\n" +
+                    $"SSD: {StorageTempText.Text}.";
+            }
+            else if (query.Contains("памят") || query.Contains("ram"))
+            {
+                answer = $"RAM сейчас: {RamValueText.Text}. {RamDetailsText.Text}.";
+            }
+            else if (query.Contains("состоян") || query.Contains("систем") ||
+                     query.Contains("комп") || query.Contains("желез"))
+            {
+                answer =
+                    $"{Environment.MachineName}\n{OsNameText.Text}\n" +
+                    $"CPU: {CpuNameText.Text} • {CpuValueText.Text}\n" +
+                    $"RAM: {RamDetailsText.Text}\n" +
+                    $"GPU: {GpuNameText.Text} • {GpuTempText.Text}\n" +
+                    $"SSD: {StorageHealthText.Text} • {StorageTempText.Text}.";
+            }
+            else
+            {
+                answer =
+                    "Пока это локальный помощник без облачной LLM. Я уже умею читать состояние железа, процессы и Planner. Подсказки команд находятся ниже поля ввода.";
+            }
+
+            _assistantOutputText.Text = answer;
+            if (_assistantInput != null)
+                _assistantInput.Text = "";
         }
 
         // ============================================================
