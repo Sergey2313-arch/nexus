@@ -29,6 +29,7 @@ namespace NEXUS
             mainWindow.InitializeLogbookGrouping();
             mainWindow.InitializePlannerV2();
             mainWindow.InitializeSafeMaintenanceCleanup();
+            mainWindow.InitializeLifecycleGuards();
 
             _window = mainWindow;
             _window.Activate();
