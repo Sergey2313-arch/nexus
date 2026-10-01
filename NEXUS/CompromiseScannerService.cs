@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,11 +14,11 @@ namespace NEXUS
 {
     public enum CompromiseRisk
     {
-        Info,
-        Low,
-        Medium,
-        High,
-        Critical
+        Info = 0,
+        Low = 1,
+        Medium = 2,
+        High = 3,
+        Critical = 4
     }
 
     public sealed class CompromiseFinding
@@ -65,17 +64,17 @@ namespace NEXUS
             ".bat", ".cmd", ".ps1", ".vbs", ".vbe", ".js", ".jse", ".wsf"
         };
 
-        private static readonly string[] SystemLookalikeNames =
+        private static readonly HashSet<string> SystemLookalikeNames = new(StringComparer.OrdinalIgnoreCase)
         {
             "svchost", "lsass", "csrss", "winlogon", "services",
             "smss", "taskhostw", "explorer", "conhost", "dwm"
         };
 
-        private static readonly string[] SuspiciousScriptMarkers =
+        private static readonly string[] ScriptMarkers =
         {
             " -enc ", " -encodedcommand ", "frombase64string", "invoke-expression",
             "iex(", "downloadstring(", "invoke-webrequest", "start-bitstransfer",
-            "regsvr32 /s /n /u /i:", "rundll32 javascript:", "mshta http"
+            "rundll32 javascript:", "mshta http"
         };
 
         public async Task<CompromiseScanReport> RunAsync(
@@ -93,7 +92,7 @@ namespace NEXUS
             await Task.Run(() => ScanFiles(report, deepScan, progress, cancellationToken), cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
-            progress?.Report("Проверка автозагрузки и Startup...");
+            progress?.Report("Проверка автозагрузки...");
             ScanRegistryAutoruns(report);
             ScanStartupFolders(report);
 
@@ -106,7 +105,7 @@ namespace NEXUS
             await ScanServicesAsync(report);
 
             cancellationToken.ThrowIfCancellationRequested();
-            progress?.Report("Проверка Microsoft Defender...");
+            progress?.Report("Проверка исключений Microsoft Defender...");
             await ScanDefenderExclusionsAsync(report);
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -125,17 +124,15 @@ namespace NEXUS
             CompromiseScanReport report,
             bool deepScan,
             IProgress<string>? progress,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
-            List<string> roots = BuildScanRoots(deepScan);
             HashSet<string> visited = new(StringComparer.OrdinalIgnoreCase);
             int maxFiles = deepScan ? 12000 : 3500;
 
-            foreach (string root in roots)
+            foreach (string root in BuildScanRoots(deepScan))
             {
                 if (report.FilesScanned >= maxFiles)
                     break;
-
                 if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
                     continue;
 
@@ -143,16 +140,13 @@ namespace NEXUS
 
                 foreach (string file in SafeEnumerateFiles(root, deepScan ? 6 : 3))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
+                    token.ThrowIfCancellationRequested();
                     if (report.FilesScanned >= maxFiles)
                         break;
-
                     if (!visited.Add(file))
                         continue;
 
                     report.FilesScanned++;
-
                     string extension;
                     try { extension = Path.GetExtension(file); }
                     catch { continue; }
@@ -166,22 +160,19 @@ namespace NEXUS
             }
         }
 
-        private static List<string> BuildScanRoots(bool deepScan)
+        private static IEnumerable<string> BuildScanRoots(bool deepScan)
         {
             string user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            string startup = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string commonStartup = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup);
 
             List<string> roots = new()
             {
                 Path.GetTempPath(),
                 Path.Combine(user, "Downloads"),
-                desktop,
-                startup,
-                commonStartup,
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.Startup),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup),
                 Path.Combine(localAppData, "Temp")
             };
 
@@ -191,14 +182,11 @@ namespace NEXUS
                 roots.Add(localAppData);
                 roots.Add(Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                    "Microsoft",
-                    "Windows",
-                    "Start Menu",
-                    "Programs",
-                    "Startup"));
+                    "Microsoft", "Windows", "Start Menu", "Programs", "Startup"));
             }
 
-            return roots.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            return roots.Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
         }
 
         private static IEnumerable<string> SafeEnumerateFiles(string root, int maxDepth)
@@ -208,44 +196,39 @@ namespace NEXUS
 
             while (pending.Count > 0)
             {
-                var current = pending.Pop();
+                (string current, int depth) = pending.Pop();
                 string[] files = Array.Empty<string>();
                 string[] directories = Array.Empty<string>();
 
-                try { files = Directory.GetFiles(current.Path); }
-                catch { }
-
+                try { files = Directory.GetFiles(current); } catch { }
                 foreach (string file in files)
                     yield return file;
 
-                if (current.Depth >= maxDepth)
+                if (depth >= maxDepth)
                     continue;
 
-                try { directories = Directory.GetDirectories(current.Path); }
-                catch { }
-
+                try { directories = Directory.GetDirectories(current); } catch { }
                 foreach (string directory in directories)
                 {
                     try
                     {
-                        FileAttributes attributes = File.GetAttributes(directory);
-                        if ((attributes & FileAttributes.ReparsePoint) != 0)
+                        if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
                             continue;
                     }
                     catch { continue; }
 
-                    pending.Push((directory, current.Depth + 1));
+                    pending.Push((directory, depth + 1));
                 }
             }
         }
 
         private static void EvaluateFile(string file, CompromiseScanReport report)
         {
-            int risk = 0;
+            int points = 0;
             List<string> reasons = new();
             string lower = file.ToLowerInvariant();
             string extension = Path.GetExtension(file).ToLowerInvariant();
-            string baseName = Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
+            string baseName = Path.GetFileNameWithoutExtension(file);
 
             bool inTemp = lower.Contains("\\temp\\") || lower.StartsWith(Path.GetTempPath().ToLowerInvariant());
             bool inDownloads = lower.Contains("\\downloads\\");
@@ -254,100 +237,91 @@ namespace NEXUS
 
             if (inTemp && IsExecutableLike(extension))
             {
-                risk += 25;
+                points += 25;
                 reasons.Add("исполняемый файл находится во временной папке");
             }
 
             if (inStartup)
             {
-                risk += 25;
+                points += 25;
                 reasons.Add("файл находится в папке автозагрузки");
             }
 
             if (inDownloads && IsScript(extension))
             {
-                risk += 12;
+                points += 12;
                 reasons.Add("скрипт находится в Downloads");
             }
 
-            if (inAppData && SystemLookalikeNames.Contains(baseName, StringComparer.OrdinalIgnoreCase))
+            if (inAppData && SystemLookalikeNames.Contains(baseName))
             {
-                risk += 35;
-                reasons.Add("имя похоже на системный процесс Windows, но файл расположен вне Windows/System32");
+                points += 35;
+                reasons.Add("имя похоже на системный процесс Windows, но файл расположен в AppData");
             }
 
             try
             {
                 FileInfo info = new(file);
-                if (info.Exists)
+                if (DateTime.Now - info.CreationTime < TimeSpan.FromDays(7))
                 {
-                    if (DateTime.Now - info.CreationTime < TimeSpan.FromDays(7))
-                    {
-                        risk += 8;
-                        reasons.Add("файл появился недавно");
-                    }
-
-                    if ((info.Attributes & FileAttributes.Hidden) != 0)
-                    {
-                        risk += 8;
-                        reasons.Add("файл имеет атрибут Hidden");
-                    }
-
-                    if ((info.Attributes & FileAttributes.System) != 0)
-                    {
-                        risk += 8;
-                        reasons.Add("файл имеет атрибут System");
-                    }
+                    points += 8;
+                    reasons.Add("файл появился недавно");
+                }
+                if ((info.Attributes & FileAttributes.Hidden) != 0)
+                {
+                    points += 8;
+                    reasons.Add("атрибут Hidden");
+                }
+                if ((info.Attributes & FileAttributes.System) != 0)
+                {
+                    points += 8;
+                    reasons.Add("атрибут System");
                 }
             }
             catch { }
 
-            string fileName = Path.GetFileName(file);
-            if (HasSuspiciousDoubleExtension(fileName))
+            if (HasSuspiciousDoubleExtension(Path.GetFileName(file)))
             {
-                risk += 18;
-                reasons.Add("имя содержит маскирующее двойное расширение");
+                points += 18;
+                reasons.Add("маскирующее двойное расширение");
             }
 
             if (IsScript(extension))
             {
-                string? marker = FindSuspiciousScriptMarker(file);
+                string? marker = FindScriptMarker(file);
                 if (marker != null)
                 {
-                    risk += 30;
-                    reasons.Add($"в скрипте найден подозрительный шаблон: {marker}");
+                    points += 30;
+                    reasons.Add($"подозрительный шаблон в скрипте: {marker}");
                 }
             }
 
-            bool? hasSignature = null;
-            if (IsExecutableLike(extension) && risk >= 20)
+            if (IsExecutableLike(extension) && points >= 20)
             {
-                hasSignature = HasEmbeddedCertificate(file);
-                if (hasSignature == false)
+                bool? signed = HasEmbeddedCertificate(file);
+                if (signed == false)
                 {
-                    risk += 12;
+                    points += 12;
                     reasons.Add("Authenticode-сертификат не обнаружен");
                 }
             }
 
-            if (risk < 20)
+            if (points < 20)
                 return;
 
             report.SuspiciousFiles++;
-            string hash = TrySha256(file);
-            CompromiseRisk level = RiskFromPoints(risk);
-
+            CompromiseRisk risk = RiskFromPoints(points);
             report.Findings.Add(new CompromiseFinding
             {
-                Risk = level,
+                Risk = risk,
                 Category = "File",
                 Title = $"Файл требует проверки: {Path.GetFileName(file)}",
                 Details = string.Join("; ", reasons),
                 Path = file,
-                Sha256 = hash,
-                Recommendation = level >= CompromiseRisk.High
-                    ? "Не удаляйте файл вслепую. Проверьте происхождение, свойства/подпись и запустите проверку Microsoft Defender. Если файл вам неизвестен и связан с автозапуском или сетевой активностью, отключитесь от сети и выполните полную проверку."
-                    : "Проверьте происхождение файла. Один эвристический признак сам по себе не доказывает заражение."
+                Sha256 = TrySha256(file),
+                Recommendation = IsAtLeast(risk, CompromiseRisk.High)
+                    ? "Не удаляйте файл вслепую. Проверьте происхождение и запустите Microsoft Defender. Если файл вам неизвестен и связан с автозапуском/сетью, временно отключитесь от сети и выполните полную проверку."
+                    : "Проверьте происхождение файла. Один эвристический признак не доказывает заражение."
             });
         }
 
@@ -366,17 +340,14 @@ namespace NEXUS
                 try
                 {
                     using RegistryKey? key = location.Root.OpenSubKey(location.Path);
-                    if (key == null)
-                        continue;
+                    if (key == null) continue;
 
                     foreach (string name in key.GetValueNames())
                     {
                         report.PersistenceEntries++;
                         string command = Environment.ExpandEnvironmentVariables(key.GetValue(name)?.ToString() ?? "");
                         int points = ScorePersistenceCommand(command, out string reason);
-
-                        if (points < 20)
-                            continue;
+                        if (points < 20) continue;
 
                         report.SuspiciousPersistenceEntries++;
                         report.Findings.Add(new CompromiseFinding
@@ -385,7 +356,7 @@ namespace NEXUS
                             Category = "Persistence",
                             Title = $"Автозагрузка требует проверки: {name}",
                             Details = $"{location.Label}: {command}. {reason}",
-                            Recommendation = "Проверьте издателя и назначение программы. Не удаляйте запись, пока не убедитесь, что она действительно нежелательная."
+                            Recommendation = "Проверьте издателя и назначение программы до отключения записи."
                         });
                     }
                 }
@@ -395,26 +366,21 @@ namespace NEXUS
 
         private static void ScanStartupFolders(CompromiseScanReport report)
         {
-            foreach (string path in new[]
+            foreach (string folder in new[]
             {
                 Environment.GetFolderPath(Environment.SpecialFolder.Startup),
                 Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup)
             })
             {
-                if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
-                    continue;
-
+                if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder)) continue;
                 string[] files;
-                try { files = Directory.GetFiles(path); }
-                catch { continue; }
+                try { files = Directory.GetFiles(folder); } catch { continue; }
 
                 foreach (string file in files)
                 {
                     report.PersistenceEntries++;
-
-                    string extension = Path.GetExtension(file);
-                    if (!InterestingExtensions.Contains(extension) &&
-                        !extension.Equals(".lnk", StringComparison.OrdinalIgnoreCase))
+                    string ext = Path.GetExtension(file);
+                    if (!InterestingExtensions.Contains(ext) && !ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     report.Findings.Add(new CompromiseFinding
@@ -424,7 +390,7 @@ namespace NEXUS
                         Title = $"Startup: {Path.GetFileName(file)}",
                         Details = "Объект запускается при входе пользователя в Windows.",
                         Path = file,
-                        Recommendation = "Если объект вам неизвестен, проверьте его свойства и целевой файл ярлыка."
+                        Recommendation = "Если объект вам неизвестен, проверьте свойства и целевой файл ярлыка."
                     });
                 }
             }
@@ -432,24 +398,17 @@ namespace NEXUS
 
         private static async Task ScanScheduledTasksAsync(CompromiseScanReport report)
         {
-            const string script =
-                "$x=Get-ScheduledTask -ErrorAction SilentlyContinue | ForEach-Object { $t=$_; foreach($a in $t.Actions){[PSCustomObject]@{TaskPath=$t.TaskPath;TaskName=$t.TaskName;Execute=$a.Execute;Arguments=$a.Arguments}}}; $x | ConvertTo-Json -Compress";
-
+            const string script = "$x=Get-ScheduledTask -ErrorAction SilentlyContinue | ForEach-Object {$t=$_; foreach($a in $t.Actions){[PSCustomObject]@{TaskName=$t.TaskName;Execute=$a.Execute;Arguments=$a.Arguments}}}; $x | ConvertTo-Json -Compress";
             using JsonDocument? json = await RunPowerShellJsonAsync(script);
-            if (json == null)
-                return;
+            if (json == null) return;
 
             foreach (JsonElement item in EnumerateObjects(json.RootElement))
             {
                 report.ScheduledTasks++;
                 string name = TryGetString(item, "TaskName");
-                string execute = TryGetString(item, "Execute");
-                string arguments = TryGetString(item, "Arguments");
-                string command = $"{execute} {arguments}".Trim();
+                string command = $"{TryGetString(item, "Execute")} {TryGetString(item, "Arguments")}".Trim();
                 int points = ScorePersistenceCommand(command, out string reason);
-
-                if (points < 20)
-                    continue;
+                if (points < 20) continue;
 
                 report.SuspiciousScheduledTasks++;
                 report.Findings.Add(new CompromiseFinding
@@ -458,19 +417,16 @@ namespace NEXUS
                     Category = "Scheduled Task",
                     Title = $"Scheduled Task требует проверки: {name}",
                     Details = $"{command}. {reason}",
-                    Recommendation = "Откройте Task Scheduler и проверьте автора, триггеры и путь запуска. Подозрительную задачу сначала отключайте, а не удаляйте без проверки."
+                    Recommendation = "Проверьте автора, триггеры и путь запуска в Task Scheduler."
                 });
             }
         }
 
         private static async Task ScanServicesAsync(CompromiseScanReport report)
         {
-            const string script =
-                "Get-CimInstance Win32_Service -ErrorAction SilentlyContinue | Where-Object {$_.StartMode -eq 'Auto'} | Select-Object Name,DisplayName,State,PathName | ConvertTo-Json -Compress";
-
+            const string script = "Get-CimInstance Win32_Service -ErrorAction SilentlyContinue | Where-Object {$_.StartMode -eq 'Auto'} | Select-Object Name,DisplayName,PathName | ConvertTo-Json -Compress";
             using JsonDocument? json = await RunPowerShellJsonAsync(script);
-            if (json == null)
-                return;
+            if (json == null) return;
 
             foreach (JsonElement item in EnumerateObjects(json.RootElement))
             {
@@ -479,9 +435,7 @@ namespace NEXUS
                 string display = TryGetString(item, "DisplayName");
                 string path = TryGetString(item, "PathName");
                 int points = ScorePersistenceCommand(path, out string reason);
-
-                if (points < 20)
-                    continue;
+                if (points < 20) continue;
 
                 report.SuspiciousServices++;
                 report.Findings.Add(new CompromiseFinding
@@ -490,35 +444,31 @@ namespace NEXUS
                     Category = "Service",
                     Title = $"Автоматическая служба требует проверки: {display}",
                     Details = $"{name}: {path}. {reason}",
-                    Recommendation = "Проверьте свойства службы и издателя файла. Не отключайте системные службы без понимания их назначения."
+                    Recommendation = "Проверьте свойства службы и издателя файла. Не отключайте системные службы вслепую."
                 });
             }
         }
 
         private static async Task ScanDefenderExclusionsAsync(CompromiseScanReport report)
         {
-            const string script =
-                "$p=Get-MpPreference -ErrorAction SilentlyContinue; if($p){[PSCustomObject]@{Paths=$p.ExclusionPath;Processes=$p.ExclusionProcess;Extensions=$p.ExclusionExtension}} | ConvertTo-Json -Compress";
-
+            const string script = "$p=Get-MpPreference -ErrorAction SilentlyContinue; $o=if($p){[PSCustomObject]@{Paths=$p.ExclusionPath;Processes=$p.ExclusionProcess;Extensions=$p.ExclusionExtension}}; $o | ConvertTo-Json -Compress";
             using JsonDocument? json = await RunPowerShellJsonAsync(script);
-            if (json == null || json.RootElement.ValueKind != JsonValueKind.Object)
-                return;
+            if (json == null || json.RootElement.ValueKind != JsonValueKind.Object) return;
 
-            foreach (string value in ReadJsonStrings(json.RootElement, "Paths")
+            IEnumerable<string> exclusions = ReadJsonStrings(json.RootElement, "Paths")
                 .Concat(ReadJsonStrings(json.RootElement, "Processes"))
-                .Concat(ReadJsonStrings(json.RootElement, "Extensions")))
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                    continue;
+                .Concat(ReadJsonStrings(json.RootElement, "Extensions"));
 
+            foreach (string value in exclusions)
+            {
+                if (string.IsNullOrWhiteSpace(value)) continue;
                 report.DefenderExclusions++;
+
                 bool suspicious = IsWritableUserLocation(value) ||
                                   value.Contains("temp", StringComparison.OrdinalIgnoreCase) ||
                                   value.Contains("powershell", StringComparison.OrdinalIgnoreCase) ||
                                   value.Equals("exe", StringComparison.OrdinalIgnoreCase);
-
-                if (!suspicious)
-                    continue;
+                if (!suspicious) continue;
 
                 report.SuspiciousDefenderExclusions++;
                 report.Findings.Add(new CompromiseFinding
@@ -527,7 +477,7 @@ namespace NEXUS
                     Category = "Defender",
                     Title = "Подозрительное исключение Microsoft Defender",
                     Details = value,
-                    Recommendation = "Если вы не добавляли это исключение сами и оно не принадлежит доверенному ПО, проверьте Windows Security и происхождение исключения."
+                    Recommendation = "Если вы не добавляли это исключение сами, проверьте Windows Security и происхождение записи."
                 });
             }
         }
@@ -538,8 +488,7 @@ namespace NEXUS
             {
                 using RegistryKey? key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Terminal Server");
                 object? value = key?.GetValue("fDenyTSConnections");
-                if (value == null)
-                    return;
+                if (value == null) return;
 
                 report.RdpEnabled = Convert.ToInt32(value) == 0;
                 if (report.RdpEnabled == true)
@@ -550,7 +499,7 @@ namespace NEXUS
                         Category = "Remote Access",
                         Title = "Remote Desktop включён",
                         Details = "Windows разрешает входящие RDP-подключения.",
-                        Recommendation = "Если вы не используете удалённый рабочий стол, отключите его в параметрах Windows. Сам факт включённого RDP не означает взлом."
+                        Recommendation = "Если вы RDP не используете, отключите его. Сам факт включения не означает взлом."
                     });
                 }
             }
@@ -562,18 +511,16 @@ namespace NEXUS
             try
             {
                 string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers", "etc", "hosts");
-                if (!File.Exists(path))
-                    return;
+                if (!File.Exists(path)) return;
 
-                string[] meaningful = File.ReadAllLines(path)
+                string[] entries = File.ReadAllLines(path)
                     .Select(line => line.Trim())
                     .Where(line => line.Length > 0 && !line.StartsWith("#"))
                     .Where(line => !line.StartsWith("127.0.0.1 localhost", StringComparison.OrdinalIgnoreCase))
                     .Where(line => !line.StartsWith("::1 localhost", StringComparison.OrdinalIgnoreCase))
                     .ToArray();
 
-                if (meaningful.Length == 0)
-                    return;
+                if (entries.Length == 0) return;
 
                 report.HostsModified = true;
                 report.Findings.Add(new CompromiseFinding
@@ -581,9 +528,9 @@ namespace NEXUS
                     Risk = CompromiseRisk.Medium,
                     Category = "System",
                     Title = "HOSTS содержит пользовательские перенаправления",
-                    Details = string.Join(" | ", meaningful.Take(10)),
+                    Details = string.Join(" | ", entries.Take(10)),
                     Path = path,
-                    Recommendation = "HOSTS часто изменяют легитимные блокировщики и разработчики, но вредоносное ПО тоже может перенаправлять домены. Проверьте записи вручную."
+                    Recommendation = "Это может быть легитимно, но вредоносное ПО тоже меняет HOSTS. Проверьте записи вручную."
                 });
             }
             catch { }
@@ -591,12 +538,9 @@ namespace NEXUS
 
         private static async Task ScanListeningPortsAsync(CompromiseScanReport report)
         {
-            const string script =
-                "$x=Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Select-Object -First 300 LocalAddress,LocalPort,OwningProcess; $x | ConvertTo-Json -Compress";
-
+            const string script = "$x=Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Select-Object -First 300 LocalAddress,LocalPort,OwningProcess; $x | ConvertTo-Json -Compress";
             using JsonDocument? json = await RunPowerShellJsonAsync(script);
-            if (json == null)
-                return;
+            if (json == null) return;
 
             foreach (JsonElement item in EnumerateObjects(json.RootElement))
             {
@@ -625,28 +569,24 @@ namespace NEXUS
                     Title = $"Процесс из пользовательской папки слушает TCP-порт: {processName}",
                     Details = $"{address}:{port} • PID {pid}",
                     Path = processPath,
-                    Recommendation = "Проверьте, ожидаете ли вы от этой программы входящие соединения. Для браузеров, IDE и локальных серверов это может быть нормальным."
+                    Recommendation = "Проверьте, ожидаете ли вы от этой программы входящие соединения. Для IDE и локальных серверов это может быть нормальным."
                 });
             }
         }
 
         private static void FinalizeReport(CompromiseScanReport report)
         {
-            int deduction = 0;
-            foreach (CompromiseFinding finding in report.Findings)
+            int deduction = report.Findings.Sum(finding => finding.Risk switch
             {
-                deduction += finding.Risk switch
-                {
-                    CompromiseRisk.Critical => 25,
-                    CompromiseRisk.High => 14,
-                    CompromiseRisk.Medium => 6,
-                    CompromiseRisk.Low => 2,
-                    _ => 0
-                };
-            }
+                CompromiseRisk.Critical => 25,
+                CompromiseRisk.High => 14,
+                CompromiseRisk.Medium => 6,
+                CompromiseRisk.Low => 2,
+                _ => 0
+            });
 
             report.Score = Math.Clamp(100 - Math.Min(deduction, 100), 0, 100);
-            int serious = report.Findings.Count(item => item.Risk >= CompromiseRisk.High);
+            int serious = report.Findings.Count(item => IsAtLeast(item.Risk, CompromiseRisk.High));
 
             report.Status = serious switch
             {
@@ -656,15 +596,15 @@ namespace NEXUS
                 _ => "NO OBVIOUS COMPROMISE"
             };
 
-            if (!report.Findings.Any(item => item.Risk >= CompromiseRisk.Medium))
+            if (!report.Findings.Any(item => IsAtLeast(item.Risk, CompromiseRisk.Medium)))
             {
                 report.Findings.Insert(0, new CompromiseFinding
                 {
                     Risk = CompromiseRisk.Info,
                     Category = "Summary",
                     Title = "Явных признаков компрометации не обнаружено",
-                    Details = "Проверены типовые пользовательские каталоги, автозагрузка, Scheduled Tasks, службы, Defender exclusions, RDP, HOSTS и слушающие TCP-порты.",
-                    Recommendation = "Это диагностическая эвристика, а не гарантия отсутствия вредоносного ПО. Для полной проверки используйте актуальный Microsoft Defender или другой доверенный антивирус."
+                    Details = "Проверены ключевые пользовательские каталоги, автозагрузка, Scheduled Tasks, службы, Defender exclusions, RDP, HOSTS и слушающие TCP-порты.",
+                    Recommendation = "Это эвристическая диагностика, а не гарантия отсутствия вредоносного ПО. Для полной проверки используйте актуальный Microsoft Defender."
                 });
             }
         }
@@ -691,7 +631,7 @@ namespace NEXUS
                 (value.Contains(" -enc ") || value.Contains(" -encodedcommand ") || value.Contains("frombase64string")))
             {
                 score += 35;
-                reasons.Add("обфусцированная/кодированная PowerShell-команда");
+                reasons.Add("кодированная PowerShell-команда");
             }
 
             if (value.Contains("wscript.exe") || value.Contains("cscript.exe") || value.Contains("mshta.exe"))
@@ -712,9 +652,7 @@ namespace NEXUS
 
         private static bool IsWritableUserLocation(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-
+            if (string.IsNullOrWhiteSpace(value)) return false;
             string expanded = Environment.ExpandEnvironmentVariables(value).Replace('/', '\\');
             string user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -726,45 +664,40 @@ namespace NEXUS
                    expanded.Contains("\\Temp\\", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsExecutableLike(string extension) =>
-            extension.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".dll", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".scr", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".com", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".msi", StringComparison.OrdinalIgnoreCase);
+        private static bool IsExecutableLike(string ext) =>
+            ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".dll", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".scr", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".com", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".msi", StringComparison.OrdinalIgnoreCase);
 
-        private static bool IsScript(string extension) =>
-            extension.Equals(".bat", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".ps1", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".vbs", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".vbe", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".js", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".jse", StringComparison.OrdinalIgnoreCase) ||
-            extension.Equals(".wsf", StringComparison.OrdinalIgnoreCase);
+        private static bool IsScript(string ext) =>
+            ext.Equals(".bat", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".cmd", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".ps1", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".vbs", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".vbe", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".js", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".jse", StringComparison.OrdinalIgnoreCase) ||
+            ext.Equals(".wsf", StringComparison.OrdinalIgnoreCase);
 
         private static bool HasSuspiciousDoubleExtension(string fileName)
         {
             string lower = fileName.ToLowerInvariant();
             string[] bait = { ".pdf.", ".doc.", ".docx.", ".jpg.", ".png.", ".txt.", ".xlsx." };
-            return bait.Any(lower.Contains);
+            return bait.Any(part => lower.Contains(part, StringComparison.Ordinal));
         }
 
-        private static string? FindSuspiciousScriptMarker(string path)
+        private static string? FindScriptMarker(string path)
         {
             try
             {
                 FileInfo info = new(path);
-                if (info.Length > 512 * 1024)
-                    return null;
-
+                if (info.Length > 512 * 1024) return null;
                 string text = File.ReadAllText(path).ToLowerInvariant();
-                return SuspiciousScriptMarkers.FirstOrDefault(marker => text.Contains(marker));
+                return ScriptMarkers.FirstOrDefault(marker => text.Contains(marker, StringComparison.Ordinal));
             }
-            catch
-            {
-                return null;
-            }
+            catch { return null; }
         }
 
         private static bool? HasEmbeddedCertificate(string path)
@@ -772,16 +705,10 @@ namespace NEXUS
             try
             {
                 using X509Certificate certificate = X509Certificate.CreateFromSignedFile(path);
-                return certificate != null;
+                return certificate.Handle != IntPtr.Zero;
             }
-            catch (CryptographicException)
-            {
-                return false;
-            }
-            catch
-            {
-                return null;
-            }
+            catch (CryptographicException) { return false; }
+            catch { return null; }
         }
 
         private static string TrySha256(string path)
@@ -789,13 +716,9 @@ namespace NEXUS
             try
             {
                 using FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                byte[] hash = SHA256.HashData(stream);
-                return Convert.ToHexString(hash);
+                return Convert.ToHexString(SHA256.HashData(stream));
             }
-            catch
-            {
-                return "";
-            }
+            catch { return ""; }
         }
 
         private static CompromiseRisk RiskFromPoints(int points) => points switch
@@ -807,12 +730,11 @@ namespace NEXUS
             _ => CompromiseRisk.Info
         };
 
-        private static string ShortPath(string path)
-        {
-            if (path.Length <= 70)
-                return path;
-            return "…" + path[^67..];
-        }
+        private static bool IsAtLeast(CompromiseRisk actual, CompromiseRisk threshold) =>
+            (int)actual >= (int)threshold;
+
+        private static string ShortPath(string path) =>
+            path.Length <= 70 ? path : "…" + path[^67..];
 
         private static async Task<JsonDocument?> RunPowerShellJsonAsync(string script)
         {
@@ -829,8 +751,6 @@ namespace NEXUS
 
                 startInfo.ArgumentList.Add("-NoProfile");
                 startInfo.ArgumentList.Add("-NonInteractive");
-                startInfo.ArgumentList.Add("-ExecutionPolicy");
-                startInfo.ArgumentList.Add("Bypass");
                 startInfo.ArgumentList.Add("-Command");
                 startInfo.ArgumentList.Add(script);
 
@@ -839,15 +759,10 @@ namespace NEXUS
                 string output = await process.StandardOutput.ReadToEndAsync();
                 await process.WaitForExitAsync();
 
-                if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
-                    return null;
-
+                if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output)) return null;
                 return JsonDocument.Parse(output);
             }
-            catch
-            {
-                return null;
-            }
+            catch { return null; }
         }
 
         private static IEnumerable<JsonElement> EnumerateObjects(JsonElement element)
@@ -855,10 +770,8 @@ namespace NEXUS
             if (element.ValueKind == JsonValueKind.Array)
             {
                 foreach (JsonElement item in element.EnumerateArray())
-                {
                     if (item.ValueKind == JsonValueKind.Object)
                         yield return item;
-                }
             }
             else if (element.ValueKind == JsonValueKind.Object)
             {
@@ -868,20 +781,14 @@ namespace NEXUS
 
         private static string TryGetString(JsonElement element, string name)
         {
-            if (!element.TryGetProperty(name, out JsonElement value))
-                return "";
-
+            if (!element.TryGetProperty(name, out JsonElement value)) return "";
             return value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : value.ToString();
         }
 
         private static int TryGetInt(JsonElement element, string name)
         {
-            if (!element.TryGetProperty(name, out JsonElement value))
-                return 0;
-
-            if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number))
-                return number;
-
+            if (!element.TryGetProperty(name, out JsonElement value)) return 0;
+            if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number)) return number;
             return int.TryParse(value.ToString(), out number) ? number : 0;
         }
 
@@ -895,15 +802,13 @@ namespace NEXUS
                 foreach (JsonElement item in value.EnumerateArray())
                 {
                     string text = item.ToString();
-                    if (!string.IsNullOrWhiteSpace(text))
-                        yield return text;
+                    if (!string.IsNullOrWhiteSpace(text)) yield return text;
                 }
                 yield break;
             }
 
             string single = value.ToString();
-            if (!string.IsNullOrWhiteSpace(single))
-                yield return single;
+            if (!string.IsNullOrWhiteSpace(single)) yield return single;
         }
     }
 }
