@@ -1,0 +1,24 @@
+name: NEXUS Windows Build
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches:
+      - nexus-009-security-diagnostics
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore and build x64
+        shell: pwsh
+        run: |
+          msbuild NEXUS/NEXUS.csproj /restore /m /p:Configuration=Release /p:Platform=x64 /p:WindowsPackageType=None /p:PublishTrimmed=False /p:PublishReadyToRun=False
