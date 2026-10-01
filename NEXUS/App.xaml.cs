@@ -18,11 +18,12 @@ namespace NEXUS
         {
             MainWindow mainWindow = new();
 
-            // Сначала создаём старые модули, затем общий роутер страниц
-            // переносит Security и Diagnostics в отдельные разделы.
+            // Сначала создаём Diagnostics и остальные страницы.
+            // Security-сканер создаётся сразу внутри своей страницы,
+            // без переноса WinUI-контрола между разными родителями.
             mainWindow.InitializeDiagnosticsUI();
-            mainWindow.InitializeCompromiseUI();
             mainWindow.InitializeMainPagesUI();
+            mainWindow.InitializeSecurityCompromiseUI();
 
             _window = mainWindow;
             _window.Activate();
