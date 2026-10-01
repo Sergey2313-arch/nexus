@@ -35,8 +35,6 @@ namespace NEXUS
                 return;
 
             _compromiseCard = BuildCompromiseCard();
-
-            // Ставим Compromise Scanner сразу после верхних блоков диагностики.
             int index = Math.Min(4, body.Children.Count);
             body.Children.Insert(index, _compromiseCard);
         }
@@ -107,33 +105,10 @@ namespace NEXUS
                 Spacing = 10
             };
 
-            _quickCompromiseButton = new Button
-            {
-                Content = "QUICK SECURITY SCAN",
-                Padding = new Thickness(14, 9, 14, 9)
-            };
-            _quickCompromiseButton.Click += QuickCompromiseButton_Click;
-
-            _deepCompromiseButton = new Button
-            {
-                Content = "DEEP FILE SCAN",
-                Padding = new Thickness(14, 9, 14, 9)
-            };
-            _deepCompromiseButton.Click += DeepCompromiseButton_Click;
-
-            _defenderQuickButton = new Button
-            {
-                Content = "DEFENDER QUICK SCAN",
-                Padding = new Thickness(14, 9, 14, 9)
-            };
-            _defenderQuickButton.Click += DefenderQuickButton_Click;
-
-            _defenderFullButton = new Button
-            {
-                Content = "DEFENDER FULL SCAN",
-                Padding = new Thickness(14, 9, 14, 9)
-            };
-            _defenderFullButton.Click += DefenderFullButton_Click;
+            _quickCompromiseButton = NewCompromiseButton("QUICK SECURITY SCAN", QuickCompromiseButton_Click);
+            _deepCompromiseButton = NewCompromiseButton("DEEP FILE SCAN", DeepCompromiseButton_Click);
+            _defenderQuickButton = NewCompromiseButton("DEFENDER QUICK SCAN", DefenderQuickButton_Click);
+            _defenderFullButton = NewCompromiseButton("DEFENDER FULL SCAN", DefenderFullButton_Click);
 
             buttons.Children.Add(_quickCompromiseButton);
             buttons.Children.Add(_deepCompromiseButton);
@@ -141,14 +116,13 @@ namespace NEXUS
             buttons.Children.Add(_defenderFullButton);
             body.Children.Add(buttons);
 
-            TextBlock note = new()
+            body.Children.Add(new TextBlock
             {
                 Text = "NEXUS использует эвристики: найденный объект не объявляется вирусом автоматически. Ничего не удаляется и не отключается без вашего решения.",
                 Foreground = CompromiseBrush(115, 119, 127),
                 FontSize = 12,
                 TextWrapping = TextWrapping.Wrap
-            };
-            body.Children.Add(note);
+            });
 
             _compromiseFindingsPanel = new StackPanel { Spacing = 10 };
             body.Children.Add(_compromiseFindingsPanel);
@@ -157,19 +131,26 @@ namespace NEXUS
             return card;
         }
 
-        private async void QuickCompromiseButton_Click(object sender, RoutedEventArgs e)
+        private static Button NewCompromiseButton(string text, RoutedEventHandler handler)
         {
-            await RunCompromiseScanAsync(false);
+            Button button = new()
+            {
+                Content = text,
+                Padding = new Thickness(14, 9, 14, 9)
+            };
+            button.Click += handler;
+            return button;
         }
 
-        private async void DeepCompromiseButton_Click(object sender, RoutedEventArgs e)
-        {
+        private async void QuickCompromiseButton_Click(object sender, RoutedEventArgs e) =>
+            await RunCompromiseScanAsync(false);
+
+        private async void DeepCompromiseButton_Click(object sender, RoutedEventArgs e) =>
             await RunCompromiseScanAsync(true);
-        }
 
         private async Task RunCompromiseScanAsync(bool deepScan)
         {
-            if (_compromiseStatusText == null || _compromiseFindingsPanel == null)
+            if (_compromiseStatusText == null || _compromiseFindingsPanel == null || _compromiseScoreText == null)
                 return;
 
             _compromiseScanCts?.Cancel();
@@ -178,7 +159,7 @@ namespace NEXUS
 
             SetCompromiseButtonsEnabled(false);
             _compromiseFindingsPanel.Children.Clear();
-            _compromiseScoreText!.Text = "SCANNING";
+            _compromiseScoreText.Text = "SCANNING";
 
             Progress<string> progress = new(message =>
             {
@@ -236,7 +217,6 @@ namespace NEXUS
 
             _compromiseScoreText.Text = $"{report.Score} / 100";
             _compromiseStatusText.Text = report.Status;
-
             _compromiseStatusText.Foreground = report.Status switch
             {
                 "POSSIBLE COMPROMISE" => CompromiseBrush(255, 92, 92),
@@ -246,13 +226,9 @@ namespace NEXUS
             };
 
             _compromiseSummaryText.Text =
-                $"Файлов просмотрено: {report.FilesScanned} • исполняемых/скриптов: {report.ExecutablesAndScriptsScanned} • " +
-                $"подозрительных файлов: {report.SuspiciousFiles}\n" +
-                $"Persistence: {report.PersistenceEntries} записей / {report.SuspiciousPersistenceEntries} предупреждений • " +
-                $"Scheduled Tasks: {report.ScheduledTasks} / {report.SuspiciousScheduledTasks} • " +
-                $"Services: {report.AutomaticServices} / {report.SuspiciousServices}\n" +
-                $"Defender exclusions: {report.DefenderExclusions} / {report.SuspiciousDefenderExclusions} • " +
-                $"Listening TCP: {report.ListeningPorts} • RDP: {FormatNullableBool(report.RdpEnabled)} • HOSTS: {(report.HostsModified ? "изменён" : "без пользовательских записей")}";
+                $"Файлов просмотрено: {report.FilesScanned} • исполняемых/скриптов: {report.ExecutablesAndScriptsScanned} • подозрительных файлов: {report.SuspiciousFiles}\n" +
+                $"Persistence: {report.PersistenceEntries} / {report.SuspiciousPersistenceEntries} • Scheduled Tasks: {report.ScheduledTasks} / {report.SuspiciousScheduledTasks} • Services: {report.AutomaticServices} / {report.SuspiciousServices}\n" +
+                $"Defender exclusions: {report.DefenderExclusions} / {report.SuspiciousDefenderExclusions} • Listening TCP: {report.ListeningPorts} • RDP: {FormatNullableBool(report.RdpEnabled)} • HOSTS: {(report.HostsModified ? "изменён" : "без пользовательских записей")}";
 
             _compromiseFindingsPanel.Children.Clear();
 
@@ -268,7 +244,7 @@ namespace NEXUS
             {
                 _compromiseFindingsPanel.Children.Add(new TextBlock
                 {
-                    Text = $"Показаны первые 80 результатов из {report.Findings.Count}. Остальные сохранены в отчёте сканирования только в памяти текущего запуска.",
+                    Text = $"Показаны первые 80 результатов из {report.Findings.Count}.",
                     Foreground = CompromiseBrush(154, 157, 165),
                     TextWrapping = TextWrapping.Wrap
                 });
@@ -380,7 +356,7 @@ namespace NEXUS
                 severity: report.Status == "POSSIBLE COMPROMISE" ? "Critical" : report.Score < 90 ? "Warning" : "Info");
 
             foreach (CompromiseFinding finding in report.Findings
-                         .Where(item => item.Risk >= CompromiseRisk.Medium)
+                         .Where(item => RiskAtLeast(item.Risk, CompromiseRisk.Medium))
                          .Take(40))
             {
                 _logService.Write(
@@ -390,19 +366,15 @@ namespace NEXUS
                     finding.Title,
                     finding.Details,
                     filePath: finding.Path,
-                    severity: finding.Risk >= CompromiseRisk.High ? "Critical" : "Warning");
+                    severity: RiskAtLeast(finding.Risk, CompromiseRisk.High) ? "Critical" : "Warning");
             }
         }
 
-        private void DefenderQuickButton_Click(object sender, RoutedEventArgs e)
-        {
+        private void DefenderQuickButton_Click(object sender, RoutedEventArgs e) =>
             StartDefenderScan("QuickScan", "Запущена быстрая проверка Microsoft Defender");
-        }
 
-        private void DefenderFullButton_Click(object sender, RoutedEventArgs e)
-        {
+        private void DefenderFullButton_Click(object sender, RoutedEventArgs e) =>
             StartDefenderScan("FullScan", "Запущена полная проверка Microsoft Defender");
-        }
 
         private void StartDefenderScan(string scanType, string logTitle)
         {
@@ -453,6 +425,9 @@ namespace NEXUS
             if (_defenderQuickButton != null) _defenderQuickButton.IsEnabled = enabled;
             if (_defenderFullButton != null) _defenderFullButton.IsEnabled = enabled;
         }
+
+        private static bool RiskAtLeast(CompromiseRisk actual, CompromiseRisk threshold) =>
+            (int)actual >= (int)threshold;
 
         private static string FormatNullableBool(bool? value) =>
             value.HasValue ? (value.Value ? "ON" : "OFF") : "N/A";
