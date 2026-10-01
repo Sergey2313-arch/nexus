@@ -28,6 +28,7 @@ namespace NEXUS
             mainWindow.InitializeExtraTools();
             mainWindow.InitializeLogbookGrouping();
             mainWindow.InitializePlannerV2();
+            mainWindow.InitializeSafeMaintenanceCleanup();
 
             _window = mainWindow;
             _window.Activate();
