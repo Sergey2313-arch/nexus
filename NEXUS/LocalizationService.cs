@@ -44,6 +44,21 @@ namespace NEXUS
             ["Dashboard.Uptime"] = new("ВРЕМЯ РАБОТЫ", "UPTIME"),
             ["Dashboard.Stable"] = new("Система работает стабильно", "System is running normally"),
             ["Dashboard.LastEvent"] = new("ПОСЛЕДНЕЕ СОБЫТИЕ", "LAST EVENT"),
+            ["Dashboard.GpuSearching"] = new("Поиск видеокарты...", "Detecting graphics adapter..."),
+            ["Dashboard.StorageSearching"] = new("Поиск накопителя...", "Detecting storage device..."),
+
+            ["Logbook.Subtitle"] = new("Бортовой журнал NEXUS", "NEXUS activity log"),
+            ["Logbook.Category"] = new("Категория", "Category"),
+            ["Logbook.All"] = new("Все", "All"),
+            ["Logbook.Programs"] = new("Программы", "Applications"),
+            ["Logbook.Processes"] = new("Процессы", "Processes"),
+            ["Logbook.Files"] = new("Файлы", "Files"),
+            ["Logbook.Clipboard"] = new("Буфер обмена", "Clipboard"),
+            ["Logbook.System"] = new("Система", "System"),
+            ["Logbook.Search"] = new("Поиск по журналу...", "Search logbook..."),
+            ["Logbook.Running"] = new("СЕЙЧАС ЗАПУЩЕНО", "RUNNING NOW"),
+            ["Logbook.History"] = new("ИСТОРИЯ", "HISTORY"),
+            ["Logbook.Export"] = new("Экспорт журнала", "Export logbook"),
 
             ["Page.DevicesSubtitle"] = new("Устройства и текущее состояние этого компьютера", "Devices and live status of this computer"),
             ["Page.PlannerSubtitle"] = new("Личные задачи NEXUS. Хранятся локально на этом компьютере.", "Personal NEXUS tasks stored locally on this computer."),
@@ -209,7 +224,8 @@ namespace NEXUS
                     .Replace("Read:", "Прочитано:", StringComparison.OrdinalIgnoreCase)
                     .Replace("Written:", "Записано:", StringComparison.OrdinalIgnoreCase)
                     .Replace(" processes", " процессов", StringComparison.OrdinalIgnoreCase)
-                    .Replace(" events", " событий", StringComparison.OrdinalIgnoreCase);
+                    .Replace(" events", " событий", StringComparison.OrdinalIgnoreCase)
+                    .Replace(" h", " ч", StringComparison.OrdinalIgnoreCase);
             }
 
             return value
