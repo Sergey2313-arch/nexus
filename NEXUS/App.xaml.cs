@@ -23,9 +23,9 @@ namespace NEXUS
             mainWindow.InitializeMainPagesUI();
             mainWindow.InitializeSecurityCompromiseUI();
 
-            // Дополнительные функции Devices / Planner / Maintenance /
-            // Assistant / Settings.
+            // Дополнительные функции интерфейса.
             mainWindow.InitializePageEnhancements();
+            mainWindow.InitializeExtraTools();
 
             _window = mainWindow;
             _window.Activate();
