@@ -41,14 +41,17 @@ namespace NEXUS
             CleanupPlannerMetadata();
             RenderPlannerUpcoming();
 
-            _pageEnhancementTimer?.Tick += (_, _) =>
+            if (_pageEnhancementTimer != null)
             {
-                if (_plannerPage?.Visibility == Visibility.Visible)
+                _pageEnhancementTimer.Tick += (_, _) =>
                 {
-                    CleanupPlannerMetadata();
-                    RenderPlannerUpcoming();
-                }
-            };
+                    if (_plannerPage?.Visibility == Visibility.Visible)
+                    {
+                        CleanupPlannerMetadata();
+                        RenderPlannerUpcoming();
+                    }
+                };
+            }
 
             UpdateVersionTo014();
         }
