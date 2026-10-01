@@ -36,6 +36,7 @@ namespace NEXUS
             mainWindow.InitializeTelemetryHistory();
             mainWindow.InitializeActivityInspector();
             mainWindow.InitializeTelemetryCharts();
+            mainWindow.InitializeProcessTrustInspector();
 
             _window = mainWindow;
             _window.Activate();
