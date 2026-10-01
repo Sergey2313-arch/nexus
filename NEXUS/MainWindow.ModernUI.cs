@@ -11,6 +11,7 @@ namespace NEXUS
     {
         private ComboBox? _topLanguageCombo;
         private ComboBox? _settingsLanguageCombo;
+        private DispatcherTimer? _localizationRefreshTimer;
         private readonly List<Button> _modernNavigationButtons = new();
         private bool _languageSync;
         private bool _modernUiInitialized;
@@ -31,6 +32,7 @@ namespace NEXUS
             BuildSettingsLanguageCard();
             ApplyLocalization();
             SelectNavigationVisual("Dashboard");
+            StartLocalizationRefresh();
             UpdateVersionTo022();
         }
 
@@ -210,10 +212,7 @@ namespace NEXUS
 
             topBar.Child = null;
 
-            Grid topGrid = new()
-            {
-                Margin = new Thickness(0)
-            };
+            Grid topGrid = new();
             topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -308,6 +307,7 @@ namespace NEXUS
                 combo.SelectedIndex == 1 ? NexusLanguage.English : NexusLanguage.Russian);
 
             ApplyLocalization();
+            RefreshLiveLocalizedTexts();
         }
 
         private void ApplyLocalization()
@@ -377,6 +377,34 @@ namespace NEXUS
             {
                 _languageSync = false;
             }
+        }
+
+        private void StartLocalizationRefresh()
+        {
+            _localizationRefreshTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1.2)
+            };
+            _localizationRefreshTimer.Tick += (_, _) => RefreshLiveLocalizedTexts();
+            _localizationRefreshTimer.Start();
+
+            Closed += (_, _) =>
+            {
+                try { _localizationRefreshTimer?.Stop(); } catch { }
+            };
+        }
+
+        private void RefreshLiveLocalizedTexts()
+        {
+            DiskStatusText.Text = LocalizationService.TranslateDynamic(DiskStatusText.Text);
+            CpuTempStatusText.Text = LocalizationService.TranslateDynamic(CpuTempStatusText.Text);
+            GpuTempText.Text = LocalizationService.TranslateDynamic(GpuTempText.Text);
+            StorageNameText.Text = LocalizationService.TranslateDynamic(StorageNameText.Text);
+            StorageStatusText.Text = LocalizationService.TranslateDynamic(StorageStatusText.Text);
+            StoragePowerOnText.Text = LocalizationService.TranslateDynamic(StoragePowerOnText.Text);
+            StorageIoText.Text = LocalizationService.TranslateDynamic(StorageIoText.Text);
+            RunningProcessesCountText.Text = LocalizationService.TranslateDynamic(RunningProcessesCountText.Text);
+            LogbookCountText.Text = LocalizationService.TranslateDynamic(LogbookCountText.Text);
         }
 
         private static string? NormalizeNavigationKey(string text)
