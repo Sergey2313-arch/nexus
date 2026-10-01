@@ -203,8 +203,9 @@ namespace NEXUS
             if (_maintenanceLargeFilesStatus == null || _maintenanceLargeFilesPanel == null)
                 return;
 
-            if (sender is Button button)
-                button.IsEnabled = false;
+            Button? scanButton = sender as Button;
+            if (scanButton != null)
+                scanButton.IsEnabled = false;
 
             _maintenanceLargeFilesStatus.Text = "Поиск крупных файлов...";
             _maintenanceLargeFilesPanel.Children.Clear();
@@ -263,8 +264,8 @@ namespace NEXUS
             }
             finally
             {
-                if (sender is Button button)
-                    button.IsEnabled = true;
+                if (scanButton != null)
+                    scanButton.IsEnabled = true;
             }
         }
 
