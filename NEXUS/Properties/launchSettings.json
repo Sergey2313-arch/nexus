@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "NEXUS (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "NEXUS (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
