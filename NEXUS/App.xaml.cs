@@ -17,8 +17,12 @@ namespace NEXUS
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             MainWindow mainWindow = new();
+
+            // Сначала создаём старые модули, затем общий роутер страниц
+            // переносит Security и Diagnostics в отдельные разделы.
             mainWindow.InitializeDiagnosticsUI();
             mainWindow.InitializeCompromiseUI();
+            mainWindow.InitializeMainPagesUI();
 
             _window = mainWindow;
             _window.Activate();
