@@ -34,6 +34,7 @@ namespace NEXUS
             mainWindow.InitializeFullSystemReportUI();
             mainWindow.InitializeFullReportAssistantBridge();
             mainWindow.InitializeTelemetryHistory();
+            mainWindow.InitializeActivityInspector();
 
             _window = mainWindow;
             _window.Activate();
