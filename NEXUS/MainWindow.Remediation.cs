@@ -11,6 +11,7 @@ public sealed partial class MainWindow
 {
     private DiagnosticSnapshot? _previousDiagnosticSnapshot;
     private bool _snapshotLoaded;
+    private bool _remediationHistoryWriteFailed;
     private readonly HashSet<string> _activeRemediationActions = new();
     public sealed record ComparisonCard(string Status, string Title, string Evidence, string Details)
     {
@@ -66,7 +67,7 @@ public sealed partial class MainWindow
     }
     private void RecordRemediationAction(string id, string state, string title, string details)
     {
-        _logService.Write("Action", state, id, title, details, severity: state is "Failed" or "Partial" ? "Warning" : "Info");
+        if (!_logService.Write("Action", state, id, title, details, severity: state is "Failed" or "Partial" ? "Warning" : "Info")) _remediationHistoryWriteFailed = true;
         if (!_securityWindowClosed) RefreshRemediationHistory();
     }
     private void RecordRemediationCancellation(string title)
@@ -90,6 +91,7 @@ public sealed partial class MainWindow
             }).Take(200).ToList();
             RemediationHistoryList.ItemsSource = rows;
             RemediationHistoryStatusText.Text = rows.Count == 0 ? "Действия пока не записаны. История появится после выполнения встроенных исправлений и очистки." : $"Последних действий: {rows.Count}. История сохраняется между запусками; результат повторной проверки показан в сравнении диагностики.";
+            if (_remediationHistoryWriteFailed) RemediationHistoryStatusText.Text += " Не все записи удалось сохранить в этом сеансе; история может быть неполной.";
         }
         catch (Exception ex) { RemediationHistoryStatusText.Text = "История недоступна: " + ex.Message; }
     }

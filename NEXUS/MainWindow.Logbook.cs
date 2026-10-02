@@ -97,14 +97,18 @@ public sealed partial class MainWindow
         try
         {
             var dialog = new ContentDialog { XamlRoot = ShellRoot.XamlRoot, RequestedTheme = ElementTheme.Dark, Title = "Завершить задачу?", Content = $"{item.Name} • PID {item.ProcessId}\nНесохранённые данные приложения могут быть потеряны.", PrimaryButtonText = "Завершить", CloseButtonText = "Отмена", DefaultButton = ContentDialogButton.Close };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
-            using var process = Process.GetProcessById(item.ProcessId);
-            using var current = Process.GetCurrentProcess();
-            string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-            string path = process.MainModule?.FileName ?? "";
-            if (process.Id == current.Id || process.SessionId != current.SessionId || item.StartedUtc == default || process.StartTime.ToUniversalTime() != item.StartedUtc || string.IsNullOrEmpty(path) || path.StartsWith(windows, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Системный, защищённый или изменившийся процесс завершить нельзя.");
-            process.Kill(entireProcessTree: false);
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) { RecordRemediationCancellation("Завершить задачу: " + item.Name); return; }
+            await RunTrackedActionAsync("Завершить задачу: " + item.Name, () => System.Threading.Tasks.Task.Run(() =>
+            {
+                using var process = Process.GetProcessById(item.ProcessId);
+                using var current = Process.GetCurrentProcess();
+                string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                string path = process.MainModule?.FileName ?? "";
+                if (process.Id == current.Id || process.SessionId != current.SessionId || item.StartedUtc == default || process.StartTime.ToUniversalTime() != item.StartedUtc || string.IsNullOrEmpty(path) || path.StartsWith(windows, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Системный, защищённый или изменившийся процесс завершить нельзя.");
+                process.Kill(entireProcessTree: false);
+                return item.ProcessId;
+            }), pid => $"Запрос завершения PID {pid} отправлен. Проверьте список процессов и загрузку памяти.");
             ProcessActionStatusText.Text = $"Запрос завершения {item.Name} (PID {item.ProcessId}) отправлен.";
             _logService.Write("Process", "UserTerminate", "ProcessManager", "Пользователь завершил задачу", item.Name, processId: item.ProcessId);
             RefreshRunningProcesses();

@@ -53,7 +53,6 @@ public sealed partial class MainWindow
                         int code = await RunTrackedActionAsync(action.Label, () => RunFixedSecurityAction(command), code => $"Команда завершилась с кодом {code}. Требуется повторная диагностика.", code => code == 0 ? "Completed" : "Failed");
                         if (_securityWindowClosed) return;
                         ResolutionStatusText.Text = $"{action.Label}: команда завершилась с кодом {code}. Повторите диагностику для проверки результата.";
-                        _logService.Write("Security", "ResolutionAction", "FindingActions", action.Label, ResolutionStatusText.Text, severity:code==0?"Info":"Warning");
                     }
                     finally { _findingOperationRunning = false; }
                     return;

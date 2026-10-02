@@ -118,7 +118,6 @@ public sealed partial class MainWindow
                     int code = await RunTrackedActionAsync(dism ? "DISM /RestoreHealth" : "SFC /scannow", () => RepairService.RunAsync(dism), code => code == 3010 ? "Требуется перезагрузка Windows, затем повторная диагностика." : $"Код завершения: {code}. Проверьте журнал CBS/DISM и повторите диагностику.", code => code == 0 || code == 3010 ? "Completed" : "Failed");
                     if (_securityWindowClosed) return;
                     AiTaskStatusText.Text = code == 3010 ? "Команда завершилась: требуется перезагрузка Windows. Перезагрузка автоматически не выполняется." : $"Команда завершилась с кодом {code}. Оцените результат в журнале CBS/DISM и повторите диагностику; код сам по себе не гарантирует исправление всех проблем.";
-                    _logService.Write("System", "SystemRepair", "AssistantTasks", dism ? "DISM /RestoreHealth завершён" : "SFC /scannow завершён", AiTaskStatusText.Text, severity: code == 0 || code == 3010 ? "Info" : "Warning");
                 }
                 catch (Exception ex) { if (!_securityWindowClosed) AiTaskStatusText.Text = "Восстановление не завершено: " + ex.Message; }
                 finally { _repairRunning = false; if (!_securityWindowClosed) button.IsEnabled = true; }

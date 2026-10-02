@@ -287,7 +287,7 @@ namespace NEXUS
 
                 var events =
                     _logService
-.GetLatest(750, category)
+                    .GetLatest(750, category)
                     .Where(item =>
                     {
                         if (string.IsNullOrWhiteSpace(search))

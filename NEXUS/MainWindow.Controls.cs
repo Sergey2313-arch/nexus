@@ -172,7 +172,6 @@ public sealed partial class MainWindow
             var result = await RunTrackedActionAsync("Освободить память NEXUS", () => Task.Run(MaintenanceService.TrimOwnMemory), r => $"Рабочий набор: {r.Item1 / 1048576.0:F1} → {r.Item2 / 1048576.0:F1} MB. Память может снова потребоваться.");
             if (_securityWindowClosed) return;
             SetMemoryActionStatus($"Рабочий набор NEXUS: {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Память может снова потребоваться приложению.");
-            _logService.Write("System", "MemoryTrim", "Maintenance", "Уменьшен рабочий набор NEXUS", MaintenanceStatusText.Text);
         }
         catch (Exception ex) { if (!_securityWindowClosed) SetMemoryActionStatus(ex.Message); }
         finally { if (!_securityWindowClosed) TrimMemoryButton.IsEnabled = true; }
@@ -204,7 +203,6 @@ public sealed partial class MainWindow
             var result = await RunTrackedActionAsync("Освободить память: " + candidate.Name, () => Task.Run(() => MaintenanceService.TrimSelectedMemory(candidate)), r => $"PID {candidate.Id}, рабочий набор: {r.Item1 / 1048576.0:F1} → {r.Item2 / 1048576.0:F1} MB. Приложение не закрывалось.");
             if (_securityWindowClosed) return;
             SetMemoryActionStatus($"{candidate.Name}: рабочий набор {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Приложение не закрывалось; память может снова потребоваться.");
-            _logService.Write("System", "MemoryTrim", "Maintenance", "Уменьшен рабочий набор выбранного приложения", MaintenanceStatusText.Text, processId: candidate.Id);
             MemoryProcessComboBox.ItemsSource = null;
         }
         catch (Exception ex) { if (!_securityWindowClosed) SetMemoryActionStatus("Не удалось освободить память: " + ex.Message); }
@@ -239,7 +237,6 @@ public sealed partial class MainWindow
             var result = await RunTrackedActionAsync("Очистка пользовательского Temp", () => Task.Run(() => MaintenanceService.CleanTemp(_tempRoot, preview)), r => $"Удалено: {r.Deleted}, пропущено: {r.Skipped}, освобождено: {r.Bytes / 1048576.0:F1} MB.", r => r.Skipped > 0 ? "Partial" : "Completed");
             if (_securityWindowClosed) return;
             MaintenanceStatusText.Text = $"Удалено: {result.Deleted}. Пропущено: {result.Skipped}. Освобождено: {result.Bytes / 1048576.0:F1} MB.";
-            _logService.Write("System", "TempCleanup", "Maintenance", "Очистка пользовательского Temp", MaintenanceStatusText.Text);
             _tempPreview = null; TempFilesText.Text = ""; TempPreviewText.Text = "Для повторной очистки выполните анализ";
         }
         catch (Exception ex) { if (!_securityWindowClosed) MaintenanceStatusText.Text = "Ошибка очистки: " + ex.Message; }

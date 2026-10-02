@@ -104,7 +104,7 @@ namespace NEXUS
             command.ExecuteNonQuery();
         }
 
-        public void Write(
+        public bool Write(
             string category,
             string eventType,
             string source,
@@ -192,11 +192,13 @@ namespace NEXUS
                     severity);
 
                 command.ExecuteNonQuery();
+                return true;
             }
             catch
             {
                 // Журнал никогда не должен
                 // ломать основную работу NEXUS.
+                return false;
             }
         }
 

@@ -212,7 +212,7 @@ try
     Check(loaded.PendingFindings?.Count == 2 && loaded.Timestamp == carried.Timestamp, "Snapshot persistence must preserve pending findings and timestamps");
     var databasePath = System.IO.Path.Combine(historyFolder, "history.db");
     var journal = new NEXUS.LogService(databasePath);
-    journal.Write("Action", "Started", "operation-1", "Repair", "started");
+    Check(journal.Write("Action", "Started", "operation-1", "Repair", "started"), "Journal should confirm a successful action write");
     journal.Write("Action", "Failed", "operation-1", "Repair", "code=5", severity: "Warning");
     for (int i = 0; i < 20; i++) journal.Write("Process", "Started", "App", "Unrelated process event");
     var history = new NEXUS.LogService(databasePath).GetLatest(2, "Action");
