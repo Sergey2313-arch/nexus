@@ -2,10 +2,15 @@ using System;
 
 namespace NEXUS.Security;
 
-public sealed record FindingResolution(string Id, string Label, string Details);
+public sealed record FindingResolution(string Id, string Label, string Details, string Explanation = "", string Steps = "", string Verification = "");
 public static class FindingResolver
 {
     public static FindingResolution Resolve(SecurityFinding finding)
+    {
+        var action = ResolveAction(finding);
+        return ResolutionGuide.Enrich(finding, action);
+    }
+    private static FindingResolution ResolveAction(SecurityFinding finding)
     {
         string title = finding.Title;
         if (finding.Category == "Hardware")

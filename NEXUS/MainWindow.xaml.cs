@@ -362,6 +362,8 @@ namespace NEXUS
                         });
                 }
 
+                foreach (var entry in _logbookItems) _ = LoadEventIconAsync(entry);
+
                 LogbookCountText.Text =
                     $"{_logbookItems.Count} событий";
             }
@@ -585,8 +587,18 @@ namespace NEXUS
             public string Details { get; set; } = "";
         }
 
-        public sealed class LogbookItem
+        public sealed class LogbookItem : System.ComponentModel.INotifyPropertyChanged
         {
+            private Microsoft.UI.Xaml.Media.ImageSource? _applicationIcon;
+            public Microsoft.UI.Xaml.Media.ImageSource? ApplicationIcon
+            {
+                get => _applicationIcon;
+                set { _applicationIcon = value; PropertyChanged?.Invoke(this, new(nameof(ApplicationIcon))); PropertyChanged?.Invoke(this, new(nameof(FallbackIconVisibility))); }
+            }
+            public Visibility FallbackIconVisibility => ApplicationIcon == null ? Visibility.Visible : Visibility.Collapsed;
+            public bool HasPath => !string.IsNullOrWhiteSpace(FilePath);
+            public string PathDisplay => HasPath ? FilePath : "Путь не сохранён или недоступен. Для старого события восстановить его только по PID нельзя.";
+            public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
             public long Id { get; set; }
             public bool IsExpanded { get; set; }
             public string Icon { get; set; } = "\uE713";

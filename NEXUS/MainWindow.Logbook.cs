@@ -42,7 +42,7 @@ public sealed partial class MainWindow
             try
             {
                 item.StartedUtc = process.StartTime.ToUniversalTime();
-                item.Path = process.MainModule?.FileName ?? "";
+                item.Path = NEXUS.Services.ProcessPathReader.Read(process.Id);
                 double cpu = process.TotalProcessorTime.TotalSeconds; long tick = Stopwatch.GetTimestamp();
                 if (_processCpuSamples.TryGetValue(item.ProcessId, out var previous) && previous.Started == item.StartedUtc)
                 {
@@ -83,11 +83,9 @@ public sealed partial class MainWindow
     {
         try
         {
-            // Launch Explorer only; never execute a log file or accept shell paths/URLs.
-            if (!Path.IsPathFullyQualified(path) || path.StartsWith("\\\\", StringComparison.Ordinal) || (!File.Exists(path) && !Directory.Exists(path))) throw new IOException("Локальный путь недоступен.");
-            var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe")) { UseShellExecute = false };
-            if (File.Exists(path)) start.ArgumentList.Add("/select," + path); else start.ArgumentList.Add(path);
-            Process.Start(start)?.Dispose();
+            var location = NEXUS.Services.LocalLocationService.Resolve(path);
+            Process.Start(NEXUS.Services.LocalLocationService.ExplorerStart(location))?.Dispose();
+            ProcessActionStatusText.Text = LogbookCountText.Text = location.SelectedFile != null ? "Открыто расположение файла: " + location.Folder : "Открыта папка: " + location.Folder;
         }
         catch (Exception ex) { ProcessActionStatusText.Text = LogbookCountText.Text = "Расположение не открыто: " + ex.Message; }
     }

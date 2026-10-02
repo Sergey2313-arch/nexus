@@ -11,6 +11,13 @@ namespace NEXUS;
 public sealed partial class MainWindow
 {
     private bool _findingOperationRunning;
+    private void VerifyResolutionButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateTo("diagnostics");
+        if (_securityScanCancellation != null) { ResolutionStatusText.Text = "Диагностика уже выполняется. Дождитесь результата."; return; }
+        if (_findingOperationRunning || _repairRunning) { ResolutionStatusText.Text = "Дождитесь завершения исправления перед повторной проверкой."; return; }
+        ScanSystemButton_Click(sender, e);
+    }
     private async void ResolveFindingButton_Click(object sender, RoutedEventArgs e)
     {
         if (((Button)sender).Tag is not FindingResolution action) return;

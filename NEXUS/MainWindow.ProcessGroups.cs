@@ -16,7 +16,7 @@ namespace NEXUS;
 public sealed partial class MainWindow
 {
     private readonly ObservableCollection<ProcessGroup> _processGroups = new();
-    private readonly Dictionary<string, BitmapImage> _processIconCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Task<BitmapImage?>> _processIconCache = new(StringComparer.OrdinalIgnoreCase);
     private RunningProcessItem? _selectedManagedProcess;
     public sealed class ProcessGroup : INotifyPropertyChanged
     {
@@ -29,7 +29,8 @@ public sealed partial class MainWindow
         public bool IsExpanded { get; set; }
         public List<RunningProcessItem> Children { get; init; } = new();
         private ImageSource? _icon;
-        public ImageSource? Icon { get => _icon; set { _icon=value; PropertyChanged?.Invoke(this,new(nameof(Icon))); } }
+        public ImageSource? Icon { get => _icon; set { _icon=value; PropertyChanged?.Invoke(this,new(nameof(Icon))); PropertyChanged?.Invoke(this,new(nameof(FallbackIconVisibility))); } }
+        public Visibility FallbackIconVisibility => Icon == null ? Visibility.Visible : Visibility.Collapsed;
         public event PropertyChangedEventHandler? PropertyChanged;
     }
     private void RefreshProcessGroups()
@@ -49,21 +50,34 @@ public sealed partial class MainWindow
     }
     private async Task LoadProcessIconAsync(ProcessGroup group)
     {
-        string path=group.Children[0].Path;
-        if (string.IsNullOrEmpty(path) || path.StartsWith("\\\\",StringComparison.Ordinal)) return;
-        if (_processIconCache.TryGetValue(path,out var cached)) { group.Icon=cached; return; }
-        if (_processIconCache.Count >= 128) return;
+        var icon = await GetApplicationIconAsync(group.Children[0].Path);
+        if (!_securityWindowClosed) group.Icon = icon;
+    }
+    private Task<BitmapImage?> GetApplicationIconAsync(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !System.IO.Path.IsPathFullyQualified(path) || path.StartsWith(@"\\",StringComparison.Ordinal)) return Task.FromResult<BitmapImage?>(null);
+        if (_processIconCache.TryGetValue(path, out var cached)) return cached;
+        if (_processIconCache.Count >= 128) return Task.FromResult<BitmapImage?>(null);
+        var task = ReadApplicationIconAsync(path);
+        _processIconCache[path] = task;
+        return task;
+    }
+    private async Task<BitmapImage?> ReadApplicationIconAsync(string path)
+    {
         try
         {
-            var file=await StorageFile.GetFileFromPathAsync(path);
-            using var thumbnail=await file.GetThumbnailAsync(ThumbnailMode.SingleItem,32,ThumbnailOptions.UseCurrentScale);
-            if (thumbnail==null) return;
-            var image=new BitmapImage(); await image.SetSourceAsync(thumbnail);
-            if (_securityWindowClosed) return;
-            group.Icon=image;
-            if (_processIconCache.Count<128) _processIconCache[path]=image;
+            var file = await StorageFile.GetFileFromPathAsync(path);
+            using var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem,32,ThumbnailOptions.UseCurrentScale);
+            if (thumbnail == null || _securityWindowClosed) return null;
+            var image = new BitmapImage(); await image.SetSourceAsync(thumbnail);
+            return image;
         }
-        catch { /* Keep the generic application icon when the shell icon is inaccessible. */ }
+        catch { return null; }
+    }
+    private async Task LoadEventIconAsync(LogbookItem item)
+    {
+        var icon = await GetApplicationIconAsync(item.FilePath);
+        if (!_securityWindowClosed) item.ApplicationIcon = icon;
     }
     private void SelectManagedProcessButton_Click(object sender,RoutedEventArgs e)
     {

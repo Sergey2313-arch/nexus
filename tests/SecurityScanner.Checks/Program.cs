@@ -14,6 +14,33 @@ Check(NEXUS.Services.SensorReadingPolicy.CurrentValue("Load", 0) == 0, "Idle loa
 Check(NEXUS.Services.SensorReadingPolicy.CurrentValue("Temperature", 54) == 54, "Available temperature must be preserved");
 Check(!NEXUS.Services.SensorReadingPolicy.IsGpuCoreTemperature("GPU VR SoC"), "VR SoC must not be used as GPU core temperature");
 Check(NEXUS.Services.SensorReadingPolicy.IsGpuCoreTemperature("GPU Core"), "GPU core temperature must be recognized");
+var guideFixture = FindingResolver.Resolve(new("Warning", "Integrity", "Test", "", ""));
+Check(guideFixture.Steps.IndexOf("DISM", StringComparison.Ordinal) < guideFixture.Steps.IndexOf("SFC", StringComparison.Ordinal), "Repair guide must put DISM before SFC");
+Check(guideFixture.Verification.Contains("Снова"), "Repair guide must require verification");
+var fileGuide = FindingResolver.Resolve(new("Warning", "Files", "Test", "", ""));
+Check(fileGuide.Explanation.Contains("не гарантирует"), "Quick scan must not claim targeted file coverage");
+if (OperatingSystem.IsWindows())
+{
+    using var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+    Check(System.IO.File.Exists(NEXUS.Services.ProcessPathReader.Read(currentProcess.Id)), "Limited-access process path reader must return current executable");
+    var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Nexus Location Test " + Guid.NewGuid().ToString("N"));
+    System.IO.Directory.CreateDirectory(folder);
+    try
+    {
+        var existing = System.IO.Path.Combine(folder, "sample.txt"); System.IO.File.WriteAllText(existing, "sample");
+        var location = NEXUS.Services.LocalLocationService.Resolve(existing);
+        Check(location.SelectedFile == existing, "Existing file should be selected in Explorer");
+        Check(NEXUS.Services.LocalLocationService.ExplorerStart(location).Arguments == "/select,\"" + existing + "\"", "Explorer switch must quote file path separately");
+        var deleted = NEXUS.Services.LocalLocationService.Resolve(System.IO.Path.Combine(folder, "removed", "sample.txt"));
+        Check(deleted.Folder == folder && deleted.SelectedFile == null, "Deleted file should open nearest surviving parent");
+        foreach (var rejected in new[] { "", "relative.exe", @"\\server\share\file.exe", @"\\?\C:\file.exe" })
+        {
+            try { NEXUS.Services.LocalLocationService.Resolve(rejected); throw new Exception("Expected path rejection"); }
+            catch (System.IO.IOException) { }
+        }
+    }
+    finally { System.IO.Directory.Delete(folder, true); }
+}
 var result = new DiagnosticResult();
 Check(!result.IsComplete, "Empty scan must not claim completion");
 for (int i = 0; i < 8; i++) result.Stages.Add(new("Stage", true, ""));
