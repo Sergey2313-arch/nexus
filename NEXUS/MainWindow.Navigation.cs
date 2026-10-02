@@ -56,7 +56,7 @@ public sealed partial class MainWindow
         for (int i = 0; i < grid.ColumnDefinitions.Count; i++)
             grid.ColumnDefinitions[i].Width = stacked && i > 0 ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         int index = 0;
-        foreach (var child in grid.Children)
+        foreach (var child in grid.Children.OfType<FrameworkElement>())
         {
             Grid.SetRow(child, stacked ? index : 0);
             Grid.SetColumn(child, stacked ? 0 : index);
