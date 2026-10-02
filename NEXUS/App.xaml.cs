@@ -44,6 +44,7 @@ namespace NEXUS
             mainWindow.InitializeLocalizationExtras();
             mainWindow.InitializeVisualPolish();
             mainWindow.InitializeDashboardOverview();
+            mainWindow.InitializeQuickActions();
 
             _window = mainWindow;
             _window.Activate();
