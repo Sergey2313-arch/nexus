@@ -21,11 +21,11 @@ namespace NEXUS
                 return;
 
             ApplyControlPolish(root);
-            ApplyResponsiveLayout(root, Bounds.Width);
+            ApplyResponsiveLayout(root, root.ActualWidth);
 
-            SizeChanged += (_, args) =>
+            root.SizeChanged += (_, args) =>
             {
-                ApplyResponsiveLayout(root, args.Size.Width);
+                ApplyResponsiveLayout(root, args.NewSize.Width);
                 ApplyControlPolish(root);
             };
         }
@@ -115,6 +115,10 @@ namespace NEXUS
         {
             if (root.ColumnDefinitions.Count < 2)
                 return;
+
+            // ActualWidth can be 0 during the first layout pass.
+            if (width <= 1)
+                width = 1280;
 
             double sidebarWidth = width switch
             {
