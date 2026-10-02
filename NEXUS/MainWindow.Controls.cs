@@ -167,6 +167,36 @@ public sealed partial class MainWindow
         catch (Exception ex) { if (!_securityWindowClosed) MaintenanceStatusText.Text = ex.Message; }
         finally { if (!_securityWindowClosed) TrimMemoryButton.IsEnabled = true; }
     }
+    private async void RefreshMemoryProcessesButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshMemoryProcessesButton.IsEnabled = false;
+        try
+        {
+            var processes = await Task.Run(MaintenanceService.ListMemoryProcesses);
+            if (_securityWindowClosed) return;
+            MemoryProcessComboBox.ItemsSource = processes;
+            MaintenanceStatusText.Text = $"Доступно приложений: {processes.Count}. Выберите одно для освобождения RAM.";
+        }
+        catch (Exception ex) { if (!_securityWindowClosed) MaintenanceStatusText.Text = ex.Message; }
+        finally { if (!_securityWindowClosed) RefreshMemoryProcessesButton.IsEnabled = true; }
+    }
+
+    private async void TrimSelectedMemoryButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (MemoryProcessComboBox.SelectedItem is not MemoryProcess candidate) { MaintenanceStatusText.Text = "Сначала выберите приложение из списка."; return; }
+        TrimSelectedMemoryButton.IsEnabled = false;
+        try
+        {
+            var result = await Task.Run(() => MaintenanceService.TrimSelectedMemory(candidate));
+            if (_securityWindowClosed) return;
+            MaintenanceStatusText.Text = $"{candidate.Name}: рабочий набор {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Приложение не закрывалось; память может снова потребоваться.";
+            _logService.Write("System", "MemoryTrim", "Maintenance", "Уменьшен рабочий набор выбранного приложения", MaintenanceStatusText.Text, processId: candidate.Id);
+            MemoryProcessComboBox.ItemsSource = null;
+        }
+        catch (Exception ex) { if (!_securityWindowClosed) MaintenanceStatusText.Text = "Не удалось освободить память: " + ex.Message; }
+        finally { if (!_securityWindowClosed) TrimSelectedMemoryButton.IsEnabled = true; }
+    }
+
     private async void AnalyzeTempButton_Click(object sender, RoutedEventArgs e)
     {
         AnalyzeTempButton.IsEnabled = CleanTempButton.IsEnabled = false; _tempPreview = null;

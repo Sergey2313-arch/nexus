@@ -13,6 +13,11 @@ public sealed record TempPreview(List<TempCandidate> Files, int Skipped, bool Li
 }
 public sealed record CleanupResult(int Deleted, int Skipped, long Bytes);
 
+public sealed record MemoryProcess(int Id, DateTime StartedUtc, string Name, long Bytes)
+{
+    public string Label => $"{Name} • PID {Id} • {Bytes / 1048576.0:F0} MB";
+}
+
 public static class MaintenanceService
 {
     public static TempPreview PreviewTemp(string root)
@@ -82,6 +87,42 @@ public static class MaintenanceService
             catch (UnauthorizedAccessException) { skipped++; }
         }
         return new(deleted, skipped, bytes);
+    }
+
+    public static List<MemoryProcess> ListMemoryProcesses()
+    {
+        using var current = Process.GetCurrentProcess();
+        var result = new List<MemoryProcess>();
+        string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        foreach (var process in Process.GetProcesses())
+        {
+            using (process)
+            {
+                try
+                {
+                    if (process.SessionId != current.SessionId || process.Id == current.Id) continue;
+                    string? path = process.MainModule?.FileName;
+                    if (string.IsNullOrEmpty(path) || path.StartsWith(windows, StringComparison.OrdinalIgnoreCase)) continue;
+                    result.Add(new(process.Id, process.StartTime.ToUniversalTime(), process.ProcessName, process.WorkingSet64));
+                }
+                catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException) { }
+            }
+        }
+        result.Sort((a,b) => b.Bytes.CompareTo(a.Bytes));
+        return result;
+    }
+
+    public static (long Before, long After) TrimSelectedMemory(MemoryProcess candidate)
+    {
+        using var process = Process.GetProcessById(candidate.Id);
+        using var current = Process.GetCurrentProcess();
+        string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        string? path = process.MainModule?.FileName;
+        if (process.SessionId != current.SessionId || process.StartTime.ToUniversalTime() != candidate.StartedUtc || string.IsNullOrEmpty(path) || path.StartsWith(windows, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Процесс изменился или недоступен для этой операции. Обновите список.");
+        process.Refresh(); long before = process.WorkingSet64;
+        if (!EmptyWorkingSet(process.Handle)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        process.Refresh(); return (before, process.WorkingSet64);
     }
 
     public static (long Before, long After) TrimOwnMemory()
