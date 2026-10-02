@@ -143,6 +143,7 @@
                             <TextBlock Text="Процессы, автозагрузка, службы, Temp, сеть, Defender и настройки защиты" TextWrapping="Wrap"/>
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <Button x:Name="ScanSystemButton" Content="ПРОВЕРИТЬ СИСТЕМУ" Click="ScanSystemButton_Click"/>
+                                <Button x:Name="OpenDiagnosticReportButton" Content="Открыть отчёт" IsEnabled="False" Click="OpenDiagnosticReportButton_Click"/>
                                 <Button x:Name="CancelSecurityScanButton" Content="Отмена" IsEnabled="False" Click="CancelSecurityScanButton_Click"/>
                             </StackPanel>
                             <ProgressBar x:Name="SecurityScanProgress" IsIndeterminate="False"/>

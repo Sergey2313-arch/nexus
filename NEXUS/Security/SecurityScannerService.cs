@@ -31,6 +31,9 @@ public sealed class SecurityScannerService
             elseif ($path -match '^(.+?\.(exe|dll|sys))(?=\s|$)') { $path = $Matches[1] }
             if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
             $risky = $path.StartsWith($env:TEMP + '\', [StringComparison]::OrdinalIgnoreCase) -or $path.StartsWith($env:APPDATA + '\', [StringComparison]::OrdinalIgnoreCase)
+            $systemName = [IO.Path]::GetFileName($path) -match '(?i)^(svchost|lsass|csrss|winlogon|services)\.exe$'
+            $outsideWindows = -not $path.StartsWith($env:windir + '\', [StringComparison]::OrdinalIgnoreCase)
+            $risky = $risky -or ($systemName -and $outsideWindows) -or ($category -eq 'Files')
             if (-not $risky) { return }
             $sig = Get-AuthenticodeSignature -LiteralPath $path -ErrorAction Stop
             if ($sig.Status -ne 'Valid') {
@@ -41,11 +44,11 @@ public sealed class SecurityScannerService
 
     private static readonly (string Name, string Script)[] Checks =
     {
-        ("Процессы", "Get-CimInstance Win32_Process -ErrorAction Stop | ForEach-Object { InspectFile $_.ExecutablePath 'Processes' }"),
-        ("Автозагрузка", "Get-CimInstance Win32_StartupCommand -ErrorAction Stop | ForEach-Object { InspectFile $_.Command 'Startup' }"),
+        ("Процессы", ExtendedChecks.Processes),
+        ("Автозагрузка", ExtendedChecks.Startup),
         ("Службы Windows", "Get-CimInstance Win32_Service -ErrorAction Stop | Where-Object StartMode -eq 'Auto' | ForEach-Object { InspectFile $_.PathName 'Services' }"),
-        ("Подозрительные файлы", "Get-ChildItem -LiteralPath $env:TEMP -File -Filter *.exe -ErrorAction Stop | Select-Object -First 200 | ForEach-Object { InspectFile $_.FullName 'Files' }"),
-        ("Сетевые соединения", "Get-NetTCPConnection -State Established -ErrorAction Stop | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; if ($p) { InspectFile $p.Path 'Network' } }"),
+        ("Подозрительные файлы", ExtendedChecks.Files),
+        ("Сетевые соединения", ExtendedChecks.Network),
         ("Windows Defender", """
             $d = Get-MpComputerStatus -ErrorAction Stop
             if (-not $d.AntivirusEnabled -or -not $d.RealTimeProtectionEnabled) {
@@ -58,15 +61,7 @@ public sealed class SecurityScannerService
                 [pscustomobject]@{ Severity='Critical'; Category='Defender'; Title='Defender: действие над обнаруженной угрозой не завершено'; Evidence=('ThreatID=' + $_.ThreatID + '; ' + ($_.Resources -join ', ')); Recommendation='Откройте журнал защиты Windows и проверьте текущий статус обнаружения.' }
             }
             """),
-        ("Настройки безопасности", """
-            Get-NetFirewallProfile -ErrorAction Stop | Where-Object { -not $_.Enabled } | ForEach-Object {
-                [pscustomobject]@{ Severity='Warning'; Category='Configuration'; Title='Профиль брандмауэра отключён'; Evidence=$_.Name; Recommendation='Проверьте настройки брандмауэра и наличие альтернативной защиты.' }
-            }
-            $uac = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -ErrorAction Stop
-            if ($uac.EnableLUA -eq 0) {
-                [pscustomobject]@{ Severity='Warning'; Category='Configuration'; Title='UAC отключён'; Evidence='EnableLUA=0'; Recommendation='Включите контроль учётных записей Windows.' }
-            }
-            """),
+        ("Настройки, целостность и события", ExtendedChecks.Configuration),
         ("Корреляция признаков", "")
     };
 
@@ -91,8 +86,17 @@ public sealed class SecurityScannerService
                             result.Findings.Add(new("Warning", "Correlation", "Файл встречается в нескольких источниках", group.Key, "Сопоставьте процесс, автозагрузку, службу и соединения; проверьте файл Defender."));
                     }
                 }
-                else result.Findings.AddRange(await RunCheckAsync(check.Script, cancellationToken));
-                result.Stages.Add(new(check.Name, true, i == 3 ? "Проверены до 200 EXE в корне Temp; это выборочная проверка." : "Проверка выполнена. Недоступные пути процессов могут отсутствовать."));
+                else
+                {
+                    var output = await RunCheckAsync(check.Script, cancellationToken, i == 6 ? 600 : 60);
+                    result.Findings.AddRange(output.Findings);
+                    if (!string.IsNullOrWhiteSpace(output.Error))
+                    {
+                        result.Stages.Add(new(check.Name, false, output.Error));
+                        continue;
+                    }
+                }
+                result.Stages.Add(new(check.Name, true, "Проверка выполнена. Доступ ограничен правами пользователя; файловая выборка ограничена."));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception ex) { result.Stages.Add(new(check.Name, false, ex.Message)); }
@@ -100,9 +104,11 @@ public sealed class SecurityScannerService
         return result;
     }
 
-    private static async Task<List<SecurityFinding>> RunCheckAsync(string script, CancellationToken cancellationToken)
+    private sealed record CheckOutput(List<SecurityFinding> Findings, string Error);
+
+    private static async Task<CheckOutput> RunCheckAsync(string script, CancellationToken cancellationToken, int timeoutSeconds)
     {
-        string wrapped = "$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new(); " + FileAnalysis + "\n$items = @( & { " + script + " } ); ConvertTo-Json -InputObject $items -Depth 5 -Compress";
+        string wrapped = "$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new(); " + FileAnalysis + "\n$items = [Collections.Generic.List[object]]::new(); $failure = ''; try { & { " + script + " } | ForEach-Object { $items.Add($_) } } catch { $failure = $_.Exception.Message }; [pscustomobject]@{ Findings=@($items.ToArray()); Error=$failure } | ConvertTo-Json -Depth 5 -Compress";
         var start = new ProcessStartInfo("powershell.exe")
         {
             UseShellExecute = false, CreateNoWindow = true,
@@ -115,7 +121,7 @@ public sealed class SecurityScannerService
         start.ArgumentList.Add(Convert.ToBase64String(Encoding.Unicode.GetBytes(wrapped)));
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Не удалось запустить PowerShell.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(45));
+        timeout.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         try { await process.WaitForExitAsync(timeout.Token); }
@@ -125,11 +131,11 @@ public sealed class SecurityScannerService
             await process.WaitForExitAsync();
             await Task.WhenAll(output, error);
             cancellationToken.ThrowIfCancellationRequested();
-            throw new TimeoutException("Проверка превысила 45 секунд.");
+            throw new TimeoutException($"Проверка превысила {timeoutSeconds} секунд.");
         }
         string json = await output;
         string stderr = await error;
         if (process.ExitCode != 0) throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Проверка недоступна." : stderr.Trim());
-        return JsonSerializer.Deserialize<List<SecurityFinding>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+        return JsonSerializer.Deserialize<CheckOutput>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new(new(), "Пустой ответ сборщика.");
     }
 }
