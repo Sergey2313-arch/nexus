@@ -55,7 +55,9 @@ if (OperatingSystem.IsWindows())
     foreach (var check in checks) scripts.Add(helper + "\n" + check.Script);
     foreach (var script in scripts)
     {
-        string command = "$errors=$null; $tokens=$null; [System.Management.Automation.Language.Parser]::ParseInput([System.Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('" + Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script)) + "')), [ref]$tokens, [ref]$errors) | Out-Null; if ($errors.Count) { $errors | Out-String | Write-Error; exit 1 }";
+        string scriptPath = System.IO.Path.GetTempFileName();
+        System.IO.File.WriteAllText(scriptPath, script, System.Text.Encoding.UTF8);
+        string command = "$errors=$null; $tokens=$null; [System.Management.Automation.Language.Parser]::ParseFile('" + scriptPath.Replace("'", "''") + "', [ref]$tokens, [ref]$errors) | Out-Null; if ($errors.Count) { $errors | Out-String | Write-Error; exit 1 }";
         var start = new System.Diagnostics.ProcessStartInfo("powershell.exe") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
         start.ArgumentList.Add("-NoProfile"); start.ArgumentList.Add("-EncodedCommand"); start.ArgumentList.Add(Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(command)));
         using var process = System.Diagnostics.Process.Start(start)!;
@@ -63,6 +65,7 @@ if (OperatingSystem.IsWindows())
         await process.WaitForExitAsync();
         Check(process.ExitCode == 0, "PowerShell parser failed: " + await stderr);
         await stdout;
+        System.IO.File.Delete(scriptPath);
     }
     var runner = typeof(SecurityScannerService).GetMethod("RunCheckAsync", flags)!;
     string fixture = "[pscustomobject]@{Severity='Warning';Category='Test';Title='Тест';Evidence='path';Recommendation='check'}; throw 'fixture error'";
