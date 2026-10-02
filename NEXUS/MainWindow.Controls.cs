@@ -199,7 +199,7 @@ public sealed partial class MainWindow
         {
             var result = await Task.Run(() => MaintenanceService.TrimSelectedMemory(candidate));
             if (_securityWindowClosed) return;
-            SetMemoryActionStatus($"{candidate.Name}: рабочий набор {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Приложение не закрывалось); память может снова потребоваться.";
+            SetMemoryActionStatus($"{candidate.Name}: рабочий набор {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Приложение не закрывалось; память может снова потребоваться.");
             _logService.Write("System", "MemoryTrim", "Maintenance", "Уменьшен рабочий набор выбранного приложения", MaintenanceStatusText.Text, processId: candidate.Id);
             MemoryProcessComboBox.ItemsSource = null;
         }
