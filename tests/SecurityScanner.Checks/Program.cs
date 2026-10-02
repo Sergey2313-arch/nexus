@@ -77,3 +77,25 @@ if (OperatingSystem.IsWindows())
     Check(collected.Count == 1 && collected[0].Title == "Тест" && failure.Contains("fixture error"), "PowerShell partial failure must preserve previous findings and Unicode");
 }
 Console.WriteLine("Hardware, report escaping, and PowerShell syntax checks passed.");
+
+var tempRoot = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "NexusCleanupTest-" + Guid.NewGuid().ToString("N"));
+System.IO.Directory.CreateDirectory(tempRoot);
+try
+{
+    var old = System.IO.Path.Combine(tempRoot, "old.tmp");
+    var recent = System.IO.Path.Combine(tempRoot, "recent.tmp");
+    var changed = System.IO.Path.Combine(tempRoot, "changed.tmp");
+    System.IO.File.WriteAllText(old, "old"); System.IO.File.SetLastWriteTimeUtc(old, DateTime.UtcNow.AddDays(-10));
+    System.IO.File.WriteAllText(recent, "recent");
+    System.IO.File.WriteAllText(changed, "old"); System.IO.File.SetLastWriteTimeUtc(changed, DateTime.UtcNow.AddDays(-10));
+    var preview = NEXUS.Services.MaintenanceService.PreviewTemp(tempRoot);
+    Check(preview.Files.Count == 2, "Recent files must not appear in cleanup preview");
+    var outside = new NEXUS.Services.TempCandidate(System.IO.Path.Combine(tempRoot, "..", "outside.tmp"), 3, DateTime.UtcNow.AddDays(-10));
+    Check(!NEXUS.Services.MaintenanceService.IsSafeCandidate(tempRoot, outside), "Cleanup must reject paths outside the root");
+    System.IO.File.WriteAllText(changed, "modified after preview");
+    var cleaned = NEXUS.Services.MaintenanceService.CleanTemp(tempRoot, preview);
+    Check(cleaned.Deleted == 1 && cleaned.Skipped == 1, "Cleanup must revalidate candidates and skip modified files");
+    Check(!System.IO.File.Exists(old) && System.IO.File.Exists(recent) && System.IO.File.Exists(changed), "Only unchanged old temp files should be deleted");
+}
+finally { System.IO.Directory.Delete(tempRoot, true); }
+Console.WriteLine("Temp preview, path boundary and cleanup revalidation checks passed.");

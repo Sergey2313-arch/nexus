@@ -42,6 +42,10 @@
                 <StackPanel Grid.Row="1" Spacing="8">
                     <TextBlock x:Name="NavCaptionText" Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" Foreground="#7F94B3" Margin="12,0,0,12"/>
                     <Button x:Name="OverviewNavButton" AutomationProperties.Name="Обзор системы" Style="{StaticResource NavButton}" Click="DashboardButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE80F;" FontSize="18"/><TextBlock x:Name="OverviewNavLabel" Text="Обзор системы"/></StackPanel></Button>
+                    <Button x:Name="ComponentsNavButton" AutomationProperties.Name="Компоненты" Style="{StaticResource NavButton}" Click="ComponentsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="18"/><TextBlock x:Name="ComponentsNavLabel" Text="Компоненты"/></StackPanel></Button>
+                    <Button x:Name="SensorsNavButton" AutomationProperties.Name="Датчики" Style="{StaticResource NavButton}" Click="SensorsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="SensorsNavLabel" Text="Датчики"/></StackPanel></Button>
+                    <Button x:Name="TemperaturesNavButton" AutomationProperties.Name="Температуры" Style="{StaticResource NavButton}" Click="TemperaturesButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9CA;" FontSize="18"/><TextBlock x:Name="TemperaturesNavLabel" Text="Температуры"/></StackPanel></Button>
+                    <Button x:Name="MaintenanceNavButton" AutomationProperties.Name="Очистка" Style="{StaticResource NavButton}" Click="MaintenanceButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE74D;" FontSize="18"/><TextBlock x:Name="MaintenanceNavLabel" Text="Очистка"/></StackPanel></Button>
                     <Button x:Name="DiagnosticsNavButton" AutomationProperties.Name="Диагностика" Style="{StaticResource NavButton}" Click="DiagnosticsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="DiagnosticsNavLabel" Text="Диагностика"/></StackPanel></Button>
                     <Button x:Name="LogbookNavButton" AutomationProperties.Name="Журнал событий" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock x:Name="LogbookNavLabel" Text="Журнал событий"/></StackPanel></Button>
                 </StackPanel>
@@ -580,6 +584,56 @@
 
                 </StackPanel>
 
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="ComponentsView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="20">
+                    <TextBlock Text="Компоненты компьютера" FontSize="32" FontWeight="Bold"/>
+                    <TextBlock Text="Модели, характеристики и связь с живыми датчиками" Style="{StaticResource MutedText}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12"><Button Content="Обновить состав" Click="RefreshComponentsButton_Click"/><ComboBox x:Name="ComponentFilterComboBox" Width="200" SelectedIndex="0" SelectionChanged="ComponentFilterComboBox_SelectionChanged"><ComboBoxItem Content="Все компоненты"/><ComboBoxItem Content="Процессор"/><ComboBoxItem Content="Видеокарта"/><ComboBoxItem Content="Оперативная память"/><ComboBoxItem Content="Материнская плата"/><ComboBoxItem Content="Накопители"/><ComboBoxItem Content="BIOS"/></ComboBox></StackPanel>
+                    <TextBlock x:Name="ComponentsStatusText" Text="Откройте раздел для загрузки" Style="{StaticResource MutedText}"/>
+                    <ItemsControl x:Name="ComponentsList"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,12"><StackPanel Spacing="10"><TextBlock Text="{Binding Kind}" Foreground="#69D4D0" FontSize="12"/><TextBlock Text="{Binding Name}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Details}" TextWrapping="Wrap"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    <TextBlock Text="Блок питания и некоторые контроллеры не сообщают модель Windows. Отсутствующие данные не подменяются предположениями." Style="{StaticResource MutedText}" FontSize="12"/>
+                </StackPanel>
+            </ScrollViewer>
+            <Grid x:Name="SensorsView" Grid.Row="1" Visibility="Collapsed" Margin="28">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <StackPanel Spacing="8" Margin="0,0,0,16"><TextBlock Text="Датчики • LIVE" FontSize="32" FontWeight="Bold"/><TextBlock x:Name="SensorsStatusText" Text="Получение показаний" Style="{StaticResource MutedText}"/></StackPanel>
+                <TextBox x:Name="SensorSearchBox" Grid.Row="1" PlaceholderText="Найти устройство или датчик" TextChanged="SensorSearchBox_TextChanged" Margin="0,0,0,16"/>
+                <ListView x:Name="LiveSensorsList" Grid.Row="2" SelectionMode="None" HorizontalContentAlignment="Stretch"><ListView.ItemTemplate><DataTemplate>
+                    <Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,8"><Grid ColumnSpacing="18"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Spacing="5"><TextBlock Text="{Binding Device}" Foreground="#A7B5C8" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Range}" Foreground="#91A1B8" FontSize="12" TextWrapping="Wrap"/></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center"><TextBlock Text="{Binding ValueText}" FontSize="25" FontWeight="Bold" Foreground="#69D4D0"/><TextBlock Text="{Binding Kind}" Foreground="#91A1B8" FontSize="11"/></StackPanel>
+                    </Grid></Border>
+                </DataTemplate></ListView.ItemTemplate></ListView>
+            </Grid>
+            <ScrollViewer x:Name="TemperaturesView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="20">
+                    <TextBlock Text="Температуры и охлаждение" FontSize="32" FontWeight="Bold"/>
+                    <TextBlock Text="Живые показания на условной схеме ПК. Нажмите компонент, чтобы посмотреть его характеристики." Style="{StaticResource MutedText}"/>
+                    <Border Style="{StaticResource DiagnosticCard}">
+                        <Grid x:Name="ThermalDiagramGrid" RowSpacing="14" ColumnSpacing="14"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="МАТЕРИНСКАЯ ПЛАТА / УСЛОВНАЯ СХЕМА" Grid.ColumnSpan="2" FontSize="11" Foreground="#91A1B8"/>
+                            <Button Grid.Row="1" Tag="CPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203848" Padding="24"><StackPanel Spacing="10"><TextBlock Text="CPU • процессор"/><TextBlock x:Name="DiagramCpuText" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="1" Grid.Column="1" Tag="RAM" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203028" Padding="24"><StackPanel Spacing="10"><TextBlock Text="RAM • оперативная память" TextWrapping="Wrap"/><TextBlock x:Name="DiagramRamText" Text="— %" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="2" Tag="GPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#2A2943" Padding="24"><StackPanel Spacing="10"><TextBlock Text="GPU • видеокарта"/><TextBlock x:Name="DiagramGpuText" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="2" Grid.Column="1" Tag="Storage" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#3A3021" Padding="24"><StackPanel Spacing="10"><TextBlock Text="SSD / HDD • накопители" TextWrapping="Wrap"/><TextBlock x:Name="DiagramStorageText" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Name="ThermalStatusText" Text="Ожидаем датчики" Style="{StaticResource MutedText}"/>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Процессор" FontSize="20" FontWeight="SemiBold"/><TextBlock x:Name="ThermalCpuText" Text="— °C" FontSize="32" Foreground="#69D4D0"/><Viewbox Stretch="Fill" Height="88"><Canvas Width="600" Height="88"><Line X1="0" Y1="87" X2="600" Y2="87" Stroke="#293548"/><Polyline x:Name="CpuTemperatureLine" Stroke="#69D4D0" StrokeThickness="2"/></Canvas></Viewbox><TextBlock Text="Последние 60 обновлений • шкала 0–110 °C • пропуски не соединяются" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Видеокарта" FontSize="20" FontWeight="SemiBold"/><TextBlock x:Name="ThermalGpuText" Text="— °C" FontSize="32" Foreground="#BCA3FF"/><Viewbox Stretch="Fill" Height="88"><Canvas Width="600" Height="88"><Line X1="0" Y1="87" X2="600" Y2="87" Stroke="#293548"/><Polyline x:Name="GpuTemperatureLine" Stroke="#BCA3FF" StrokeThickness="2"/></Canvas></Viewbox><TextBlock Text="Последние 60 обновлений • шкала 0–110 °C • пропуски не соединяются" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Накопитель" FontSize="20" FontWeight="SemiBold"/><TextBlock x:Name="ThermalStorageText" Text="— °C" FontSize="32" Foreground="#FFC857"/><Viewbox Stretch="Fill" Height="88"><Canvas Width="600" Height="88"><Line X1="0" Y1="87" X2="600" Y2="87" Stroke="#293548"/><Polyline x:Name="StorageTemperatureLine" Stroke="#FFC857" StrokeThickness="2"/></Canvas></Viewbox><TextBlock Text="Последние 60 обновлений • шкала 0–110 °C • пропуски не соединяются" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel></Border>
+                </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer x:Name="MaintenanceView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="22">
+                    <TextBlock Text="Очистка и обслуживание" FontSize="32" FontWeight="Bold"/>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="14"><TextBlock Text="Оперативная память" FontSize="23" FontWeight="SemiBold"/><TextBlock x:Name="MaintenanceRamText" Text="Получение данных" FontSize="28" Foreground="#69D4D0"/><TextBlock Text="Кнопка уменьшает рабочий набор самого NEXUS. Другие программы не закрываются. Это не очистка всей RAM; Windows самостоятельно управляет свободной и кэшированной памятью." Style="{StaticResource MutedText}"/><Button x:Name="TrimMemoryButton" Content="Освободить память NEXUS" Click="TrimMemoryButton_Click"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="14"><TextBlock Text="Временные файлы пользователя" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="Только файлы в пользовательском Temp старше 7 дней. Перед удалением — объём и список. Занятые, изменённые файлы и ссылки пропускаются; документы и загрузки не очищаются." Style="{StaticResource MutedText}"/><TextBlock x:Name="TempPreviewText" Text="Сначала выполните анализ" FontSize="20"/><StackPanel Orientation="Horizontal" Spacing="12"><Button x:Name="AnalyzeTempButton" Content="Анализировать Temp" Click="AnalyzeTempButton_Click"/><Button x:Name="CleanTempButton" Content="Удалить выбранные временные файлы" Click="CleanTempButton_Click" IsEnabled="False"/></StackPanel><Expander Header="Файлы к удалению (первые 100)" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock x:Name="TempFilesText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander></StackPanel></Border>
+                    <Button Content="Открыть параметры хранилища Windows" Click="WindowsStorageButton_Click"/>
+                    <TextBlock x:Name="MaintenanceStatusText" Text="Действия выполняются только по нажатию кнопок" Style="{StaticResource MutedText}"/>
+                </StackPanel>
             </ScrollViewer>
 
             <ScrollViewer x:Name="DiagnosticsView" Grid.Row="1" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled">

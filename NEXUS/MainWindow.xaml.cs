@@ -128,6 +128,7 @@ namespace NEXUS
         WindowEventArgs args)
         {
             _securityWindowClosed = true;
+            _controlsLifetime.Cancel();
             _securityScanCancellation?.Cancel();
             _monitorTimer.Stop();
             _logbookTimer.Stop();
@@ -159,6 +160,7 @@ namespace NEXUS
 
             UpdateHardwareSensors();
             UpdateStorageHealth();
+            UpdateControlCenter();
         }
 
         // ============================================
