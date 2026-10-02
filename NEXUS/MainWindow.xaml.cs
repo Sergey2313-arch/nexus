@@ -237,60 +237,25 @@ namespace NEXUS
         {
             try
             {
-                var processes =
-                    Process.GetProcesses()
-                    .Select(process =>
-                    {
-                        try
-                        {
-                            string title =
-                                process.MainWindowTitle ?? "";
-
-                            long memoryBytes =
-                                process.WorkingSet64;
-
-                            return new RunningProcessItem
-                            {
-                                Name = process.ProcessName,
-                                ProcessId = process.Id,
-                                MemoryBytes = memoryBytes,
-                                Memory = FormatBytes(memoryBytes),
-                                Details =
-                                    string.IsNullOrWhiteSpace(title)
-                                        ? $"PID {process.Id}"
-                                        : $"PID {process.Id} • {title}"
-                            };
-                        }
-                        catch
-                        {
-                            return null;
-                        }
-                        finally
-                        {
-                            process.Dispose();
-                        }
-                    })
-                    .OfType<RunningProcessItem>()
-                    .OrderByDescending(item => item.MemoryBytes)
-                    .ThenBy(item => item.Name)
-                    .ToList();
-
-                _runningProcesses.Clear();
-
-                foreach (RunningProcessItem item
-                         in processes)
+                var selected = RunningProcessesList.SelectedItem as RunningProcessItem;
+                var processes = Process.GetProcesses().Select(ReadProcess).OfType<RunningProcessItem>().ToList();
+                var ids = processes.Select(p => p.ProcessId).ToHashSet();
+                foreach (int id in _processCpuSamples.Keys.Where(id => !ids.Contains(id)).ToArray()) _processCpuSamples.Remove(id);
+                string search = ProcessSearchBox?.Text ?? "";
+                var filtered = processes.Where(p => (p.Name + " " + p.ProcessId).Contains(search, StringComparison.OrdinalIgnoreCase));
+                var sorted = (ProcessSortComboBox?.SelectedIndex ?? 0) switch
                 {
-                    _runningProcesses.Add(item);
-                }
-
-                RunningProcessesCountText.Text =
-                    $"{_runningProcesses.Count} процессов";
+                    1 => filtered.OrderByDescending(p => p.CpuPercent),
+                    2 => filtered.OrderBy(p => p.Name),
+                    3 => filtered.OrderBy(p => p.ProcessId),
+                    _ => filtered.OrderByDescending(p => p.MemoryBytes)
+                };
+                _runningProcesses.Clear();
+                foreach (var process in sorted) _runningProcesses.Add(process);
+                if (selected != null) RunningProcessesList.SelectedItem = _runningProcesses.FirstOrDefault(p => p.ProcessId == selected.ProcessId && p.StartedUtc == selected.StartedUtc);
+                RunningProcessesCountText.Text = $"{processes.Count} процессов • показано {_runningProcesses.Count}";
             }
-            catch
-            {
-                RunningProcessesCountText.Text =
-                    "Не удалось получить процессы";
-            }
+            catch (Exception ex) { RunningProcessesCountText.Text = "Не удалось получить процессы: " + ex.Message; }
         }
 
         // ============================================
@@ -350,6 +315,7 @@ namespace NEXUS
                     .Take(500)
                     .ToList();
 
+                var expanded = _logbookItems.Where(i => i.IsExpanded).Select(i => i.Id).ToHashSet();
                 _logbookItems.Clear();
 
                 foreach (LogEvent item
@@ -372,6 +338,11 @@ namespace NEXUS
                     _logbookItems.Add(
                         new LogbookItem
                         {
+                            Id = item.Id,
+                            IsExpanded = expanded.Contains(item.Id),
+                            Icon = EventIcon(item.Category),
+                            Accent = EventAccent(item.Severity),
+                            Summary = $"{item.Timestamp:dd.MM.yyyy HH:mm:ss} • {GetCategoryDisplayName(item.Category)} • {item.Source} • {item.Severity}",
                             Time =
                                 item.Timestamp.Date ==
                                 DateTime.Today
@@ -602,6 +573,10 @@ namespace NEXUS
 
         public sealed class RunningProcessItem
         {
+            public DateTime StartedUtc { get; set; }
+            public string Path { get; set; } = "";
+            public double CpuPercent { get; set; }
+            public string Cpu { get; set; } = "—";
             public string Name { get; set; } = "";
             public int ProcessId { get; set; }
             public long MemoryBytes { get; set; }
@@ -611,6 +586,11 @@ namespace NEXUS
 
         public sealed class LogbookItem
         {
+            public long Id { get; set; }
+            public bool IsExpanded { get; set; }
+            public string Icon { get; set; } = "\uE713";
+            public Microsoft.UI.Xaml.Media.SolidColorBrush Accent { get; set; } = EventAccent("Info");
+            public string Summary { get; set; } = "";
             public string Time { get; set; } = "";
             public string Category { get; set; } = "";
             public string Source { get; set; } = "";
