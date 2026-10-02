@@ -5,7 +5,7 @@
     xmlns:local="using:NEXUS"
     Title="NEXUS">
 
-    <Grid Background="#0B1018" RequestedTheme="Dark">
+    <Grid x:Name="ShellRoot" Background="#0B1018" RequestedTheme="Dark" SizeChanged="ShellRoot_SizeChanged">
         <Grid.Resources>
             <Style x:Key="NavButton" TargetType="Button">
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -29,23 +29,23 @@
             </Style>
         </Grid.Resources>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition x:Name="SidebarColumn" Width="220"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Border Background="#101723" BorderBrush="#253043" BorderThickness="0,0,1,0">
             <Grid Margin="16,28,16,20">
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                 <StackPanel Spacing="6" Margin="12,0,0,32">
-                    <TextBlock Text="NEXUS" FontSize="30" FontWeight="Bold" CharacterSpacing="150" Foreground="#ECF4FF"/>
-                    <TextBlock Text="SYSTEM INTELLIGENCE" FontSize="10" CharacterSpacing="130" Foreground="#7F94B3"/>
+                    <TextBlock x:Name="BrandText" Text="NEXUS" FontSize="30" FontWeight="Bold" CharacterSpacing="150" Foreground="#ECF4FF"/>
+                    <TextBlock x:Name="BrandSubtitleText" Text="SYSTEM INTELLIGENCE" FontSize="10" CharacterSpacing="130" Foreground="#7F94B3"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Spacing="8">
-                    <TextBlock Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" Foreground="#7F94B3" Margin="12,0,0,12"/>
-                    <Button x:Name="OverviewNavButton" Style="{StaticResource NavButton}" Click="DashboardButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE80F;" FontSize="18"/><TextBlock Text="Обзор системы"/></StackPanel></Button>
-                    <Button x:Name="DiagnosticsNavButton" Style="{StaticResource NavButton}" Click="DiagnosticsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock Text="Диагностика"/></StackPanel></Button>
-                    <Button x:Name="LogbookNavButton" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock Text="Журнал событий"/></StackPanel></Button>
+                    <TextBlock x:Name="NavCaptionText" Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" Foreground="#7F94B3" Margin="12,0,0,12"/>
+                    <Button x:Name="OverviewNavButton" AutomationProperties.Name="Обзор системы" Style="{StaticResource NavButton}" Click="DashboardButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE80F;" FontSize="18"/><TextBlock x:Name="OverviewNavLabel" Text="Обзор системы"/></StackPanel></Button>
+                    <Button x:Name="DiagnosticsNavButton" AutomationProperties.Name="Диагностика" Style="{StaticResource NavButton}" Click="DiagnosticsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="DiagnosticsNavLabel" Text="Диагностика"/></StackPanel></Button>
+                    <Button x:Name="LogbookNavButton" AutomationProperties.Name="Журнал событий" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock x:Name="LogbookNavLabel" Text="Журнал событий"/></StackPanel></Button>
                 </StackPanel>
-                <Border Grid.Row="2" Background="#192435" CornerRadius="12" Padding="14">
+                <Border x:Name="SidebarFooter" Grid.Row="2" Background="#192435" CornerRadius="12" Padding="14">
                     <StackPanel Spacing="6"><TextBlock Text="Мониторинг в реальном времени" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="Данные остаются на этом ПК" FontSize="11" Foreground="#A7B5C8"/></StackPanel>
                 </Border>
             </Grid>
@@ -144,9 +144,10 @@
                     <!--       CPU / RAM / DISK    -->
                     <!-- ========================= -->
 
-                    <Grid ColumnSpacing="18">
+                    <Grid x:Name="OverviewLoadGrid" ColumnSpacing="18" RowSpacing="18">
 
-                        <Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+<Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -267,9 +268,10 @@
                     <!--     CPU TEMP / GPU        -->
                     <!-- ========================= -->
 
-                    <Grid ColumnSpacing="18">
+                    <Grid x:Name="OverviewTemperatureGrid" ColumnSpacing="18" RowSpacing="18">
 
-                        <Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+<Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -587,7 +589,7 @@
                         <StackPanel Spacing="16">
                             <TextBlock x:Name="SecurityScanStatusText" Text="Готово к проверке" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             <TextBlock Text="Восемь этапов: процессы, автозагрузка, службы, файлы, сеть, защита Windows, целостность и анализ признаков." Style="{StaticResource MutedText}"/>
-                            <StackPanel Orientation="Horizontal" Spacing="10">
+                            <StackPanel x:Name="ScanActionsPanel" Orientation="Horizontal" Spacing="10">
                                 <Button x:Name="ScanSystemButton" Content="Проверить систему" Click="ScanSystemButton_Click" Background="#69D4D0" Foreground="#0B2025" Padding="20,12" FontWeight="SemiBold"/>
                                 <Button x:Name="CancelSecurityScanButton" Content="Отмена" IsEnabled="False" Click="CancelSecurityScanButton_Click" Padding="16,12"/>
                                 <Button x:Name="OpenDiagnosticReportButton" Content="Открыть отчёт" IsEnabled="False" Click="OpenDiagnosticReportButton_Click" Padding="16,12"/>
@@ -596,7 +598,7 @@
                             <TextBlock x:Name="ScanCoverageText" Text="Для SFC, DISM и журнала Security нужны права администратора. Остальные доступные проверки выполнятся без них." Style="{StaticResource MutedText}" FontSize="12"/>
                         </StackPanel>
                     </Border>
-                    <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Grid x:Name="HealthCardsGrid" ColumnSpacing="12" RowSpacing="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock Text="ОБЩИЙ HEALTH SCORE" Foreground="#A7B5C8" FontSize="11"/><TextBlock x:Name="OverallHealthText" Text="—" FontSize="36" FontWeight="Bold" Foreground="#69D4D0"/><TextBlock x:Name="OverallHealthDetailText" Text="Проверка ещё не запускалась" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel></Border>
                         <Border Grid.Column="1" Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock Text="БЕЗОПАСНОСТЬ" Foreground="#A7B5C8" FontSize="11"/><TextBlock x:Name="SecurityHealthText" Text="—" FontSize="36" FontWeight="Bold"/><TextBlock x:Name="SecurityHealthDetailText" Text="Нет результатов" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel></Border>
                         <Border Grid.Column="2" Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock Text="ОБОРУДОВАНИЕ" Foreground="#A7B5C8" FontSize="11"/><TextBlock x:Name="HardwareHealthText" Text="—" FontSize="36" FontWeight="Bold"/><TextBlock x:Name="HardwareHealthDetailText" Text="Нет результатов" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel></Border>

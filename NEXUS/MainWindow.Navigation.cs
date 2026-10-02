@@ -35,6 +35,35 @@ public sealed partial class MainWindow
 
     private static SolidColorBrush Brush(byte r, byte g, byte b) => new(Color.FromArgb(255, r, g, b));
 
+    private void ShellRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (HealthCardsGrid == null || OverviewLoadGrid == null || OverviewTemperatureGrid == null) return;
+        bool compactNavigation = e.NewSize.Width < 1000;
+        SidebarColumn.Width = new GridLength(compactNavigation ? 88 : 220);
+        BrandText.Text = compactNavigation ? "N" : "NEXUS";
+        foreach (var label in new FrameworkElement[] { BrandSubtitleText, NavCaptionText, OverviewNavLabel, DiagnosticsNavLabel, LogbookNavLabel, SidebarFooter })
+            label.Visibility = compactNavigation ? Visibility.Collapsed : Visibility.Visible;
+        double contentWidth = e.NewSize.Width - SidebarColumn.Width.Value;
+        bool stackCards = contentWidth < 700;
+        LayoutCards(HealthCardsGrid, stackCards);
+        LayoutCards(OverviewLoadGrid, stackCards);
+        LayoutCards(OverviewTemperatureGrid, stackCards);
+        ScanActionsPanel.Orientation = contentWidth < 600 ? Orientation.Vertical : Orientation.Horizontal;
+    }
+
+    private static void LayoutCards(Grid grid, bool stacked)
+    {
+        for (int i = 0; i < grid.ColumnDefinitions.Count; i++)
+            grid.ColumnDefinitions[i].Width = stacked && i > 0 ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        int index = 0;
+        foreach (var child in grid.Children)
+        {
+            Grid.SetRow(child, stacked ? index : 0);
+            Grid.SetColumn(child, stacked ? 0 : index);
+            index++;
+        }
+    }
+
     private void NavigateTo(string page)
     {
         _isLogbookVisible = page == "logbook";
