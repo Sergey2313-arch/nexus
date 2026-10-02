@@ -39,7 +39,7 @@
                     <TextBlock x:Name="BrandText" Text="NEXUS" FontSize="30" FontWeight="Bold" CharacterSpacing="150" Foreground="#ECF4FF"/>
                     <TextBlock x:Name="BrandSubtitleText" Text="SYSTEM INTELLIGENCE" FontSize="10" CharacterSpacing="130" Foreground="#7F94B3"/>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Spacing="8">
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Spacing="8">
                     <TextBlock x:Name="NavCaptionText" Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" Foreground="#7F94B3" Margin="12,0,0,12"/>
                     <Button x:Name="OverviewNavButton" AutomationProperties.Name="Обзор системы" Style="{StaticResource NavButton}" Click="DashboardButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE80F;" FontSize="18"/><TextBlock x:Name="OverviewNavLabel" Text="Обзор системы"/></StackPanel></Button>
                     <Button x:Name="ComponentsNavButton" AutomationProperties.Name="Компоненты" Style="{StaticResource NavButton}" Click="ComponentsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="18"/><TextBlock x:Name="ComponentsNavLabel" Text="Компоненты"/></StackPanel></Button>
@@ -48,7 +48,7 @@
                     <Button x:Name="MaintenanceNavButton" AutomationProperties.Name="Очистка" Style="{StaticResource NavButton}" Click="MaintenanceButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE74D;" FontSize="18"/><TextBlock x:Name="MaintenanceNavLabel" Text="Очистка"/></StackPanel></Button>
                     <Button x:Name="DiagnosticsNavButton" AutomationProperties.Name="Диагностика" Style="{StaticResource NavButton}" Click="DiagnosticsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="DiagnosticsNavLabel" Text="Диагностика"/></StackPanel></Button>
                     <Button x:Name="LogbookNavButton" AutomationProperties.Name="Журнал событий" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock x:Name="LogbookNavLabel" Text="Журнал событий"/></StackPanel></Button>
-                </StackPanel>
+                </StackPanel></ScrollViewer>
                 <Border x:Name="SidebarFooter" Grid.Row="2" Background="#192435" CornerRadius="12" Padding="14">
                     <StackPanel Spacing="6"><TextBlock Text="Мониторинг в реальном времени" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="Данные остаются на этом ПК" FontSize="11" Foreground="#A7B5C8"/></StackPanel>
                 </Border>
@@ -614,10 +614,10 @@
                     <Border Style="{StaticResource DiagnosticCard}">
                         <Grid x:Name="ThermalDiagramGrid" RowSpacing="14" ColumnSpacing="14"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock Text="МАТЕРИНСКАЯ ПЛАТА / УСЛОВНАЯ СХЕМА" Grid.ColumnSpan="2" FontSize="11" Foreground="#91A1B8"/>
-                            <Button Grid.Row="1" Tag="CPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203848" Padding="24"><StackPanel Spacing="10"><TextBlock Text="CPU • процессор"/><TextBlock x:Name="DiagramCpuText" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="1" Tag="CPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203848" Padding="24"><StackPanel Spacing="10"><TextBlock Text="CPU • процессор"/><TextBlock x:Name="DiagramCpuText" TextWrapping="Wrap" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
                             <Button Grid.Row="1" Grid.Column="1" Tag="RAM" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203028" Padding="24"><StackPanel Spacing="10"><TextBlock Text="RAM • оперативная память" TextWrapping="Wrap"/><TextBlock x:Name="DiagramRamText" Text="— %" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
-                            <Button Grid.Row="2" Tag="GPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#2A2943" Padding="24"><StackPanel Spacing="10"><TextBlock Text="GPU • видеокарта"/><TextBlock x:Name="DiagramGpuText" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
-                            <Button Grid.Row="2" Grid.Column="1" Tag="Storage" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#3A3021" Padding="24"><StackPanel Spacing="10"><TextBlock Text="SSD / HDD • накопители" TextWrapping="Wrap"/><TextBlock x:Name="DiagramStorageText" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="2" Tag="GPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#2A2943" Padding="24"><StackPanel Spacing="10"><TextBlock Text="GPU • видеокарта"/><TextBlock x:Name="DiagramGpuText" TextWrapping="Wrap" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="2" Grid.Column="1" Tag="Storage" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#3A3021" Padding="24"><StackPanel Spacing="10"><TextBlock Text="SSD / HDD • накопители" TextWrapping="Wrap"/><TextBlock x:Name="DiagramStorageText" TextWrapping="Wrap" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
                         </Grid>
                     </Border>
                     <TextBlock x:Name="ThermalStatusText" Text="Ожидаем датчики" Style="{StaticResource MutedText}"/>
