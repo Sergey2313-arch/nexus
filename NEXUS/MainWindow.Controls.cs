@@ -169,7 +169,7 @@ public sealed partial class MainWindow
         SetMemoryActionStatus("Освобождаем память NEXUS…");
         try
         {
-            var result = await Task.Run(MaintenanceService.TrimOwnMemory);
+            var result = await RunTrackedActionAsync("Освободить память NEXUS", () => Task.Run(MaintenanceService.TrimOwnMemory), r => $"Рабочий набор: {r.Item1 / 1048576.0:F1} → {r.Item2 / 1048576.0:F1} MB. Память может снова потребоваться.");
             if (_securityWindowClosed) return;
             SetMemoryActionStatus($"Рабочий набор NEXUS: {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Память может снова потребоваться приложению.");
             _logService.Write("System", "MemoryTrim", "Maintenance", "Уменьшен рабочий набор NEXUS", MaintenanceStatusText.Text);
@@ -201,7 +201,7 @@ public sealed partial class MainWindow
         SetMemoryActionStatus("Освобождаем память выбранного приложения…");
         try
         {
-            var result = await Task.Run(() => MaintenanceService.TrimSelectedMemory(candidate));
+            var result = await RunTrackedActionAsync("Освободить память: " + candidate.Name, () => Task.Run(() => MaintenanceService.TrimSelectedMemory(candidate)), r => $"PID {candidate.Id}, рабочий набор: {r.Item1 / 1048576.0:F1} → {r.Item2 / 1048576.0:F1} MB. Приложение не закрывалось.");
             if (_securityWindowClosed) return;
             SetMemoryActionStatus($"{candidate.Name}: рабочий набор {result.Before / 1048576.0:F1} → {result.After / 1048576.0:F1} MB. Приложение не закрывалось; память может снова потребоваться.");
             _logService.Write("System", "MemoryTrim", "Maintenance", "Уменьшен рабочий набор выбранного приложения", MaintenanceStatusText.Text, processId: candidate.Id);
@@ -235,8 +235,8 @@ public sealed partial class MainWindow
         try
         {
             var dialog = new ContentDialog { XamlRoot = ShellRoot.XamlRoot, RequestedTheme = ElementTheme.Dark, Title = "Удалить временные файлы?", Content = $"{preview.Files.Count} файлов старше 7 дней в {_tempRoot}\nДо {preview.Bytes / 1048576.0:F1} MB. Удаление не использует корзину; изменённые и занятые файлы пропускаются.", PrimaryButtonText = "Удалить", CloseButtonText = "Отмена", DefaultButton = ContentDialogButton.Close };
-            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
-            var result = await Task.Run(() => MaintenanceService.CleanTemp(_tempRoot, preview));
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) { RecordRemediationCancellation("Очистка пользовательского Temp"); return; }
+            var result = await RunTrackedActionAsync("Очистка пользовательского Temp", () => Task.Run(() => MaintenanceService.CleanTemp(_tempRoot, preview)), r => $"Удалено: {r.Deleted}, пропущено: {r.Skipped}, освобождено: {r.Bytes / 1048576.0:F1} MB.", r => r.Skipped > 0 ? "Partial" : "Completed");
             if (_securityWindowClosed) return;
             MaintenanceStatusText.Text = $"Удалено: {result.Deleted}. Пропущено: {result.Skipped}. Освобождено: {result.Bytes / 1048576.0:F1} MB.";
             _logService.Write("System", "TempCleanup", "Maintenance", "Очистка пользовательского Temp", MaintenanceStatusText.Text);

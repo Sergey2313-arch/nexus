@@ -77,6 +77,7 @@ public sealed partial class MainWindow
         SensorsView.Visibility = page == "sensors" ? Visibility.Visible : Visibility.Collapsed;
         TemperaturesView.Visibility = page == "temperatures" ? Visibility.Visible : Visibility.Collapsed;
         MaintenanceView.Visibility = page == "maintenance" ? Visibility.Visible : Visibility.Collapsed;
+        if (page == "diagnostics") RefreshRemediationHistory();
         PageTitleText.Text = page switch { "overview" => "Обзор системы", "diagnostics" => "Диагностика", "components" => "Компоненты", "sensors" => "Датчики", "temperatures" => "Температуры", "maintenance" => "Очистка", "ai" => "ИИ-помощник", "events" => "Журнал событий", _ => "Бортовой журнал" };
         foreach (var item in new[] { (OverviewNavButton, "overview"), (DiagnosticsNavButton, "diagnostics"), (LogbookNavButton, "logbook"), (ComponentsNavButton, "components"), (SensorsNavButton, "sensors"), (TemperaturesNavButton, "temperatures"), (MaintenanceNavButton, "maintenance"), (AiNavButton, "ai"), (EventsNavButton, "events") })
         {
@@ -95,6 +96,8 @@ public sealed partial class MainWindow
 
     private void ResetDiagnosticCards()
     {
+        DiagnosticComparisonList.ItemsSource = null;
+        DiagnosticComparisonStatusText.Text = "Проверка выполняется. Сравнение появится после завершения; предыдущий снимок сохранён.";
         _hasDiagnosticResult = false;
         _activeScanStage = 0;
         _completedScanStages.Clear();
@@ -173,6 +176,7 @@ public sealed partial class MainWindow
     private void StopDiagnosticCards(string message)
     {
         OverallHealthDetailText.Text = SecurityHealthDetailText.Text = HardwareHealthDetailText.Text = message;
+        DiagnosticComparisonStatusText.Text = message + ". Сравнение не обновлено, предыдущий снимок сохранён.";
         ScanCoverageText.Text = "Проверка не завершена. Итоговая оценка не сформирована.";
         RenderScanStages();
         RefreshFindingCards();

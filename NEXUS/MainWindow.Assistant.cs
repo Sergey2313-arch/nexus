@@ -113,9 +113,9 @@ public sealed partial class MainWindow
                 {
                     bool dism = task == "dism";
                     var dialog = new ContentDialog { XamlRoot = ShellRoot.XamlRoot, RequestedTheme = ElementTheme.Dark, Title = dism ? "Восстановить хранилище компонентов?" : "Восстановить системные файлы?", Content = (dism ? "DISM /Online /Cleanup-Image /RestoreHealth. Возможно использование Windows Update." : "SFC /scannow.") + "\nКоманда может менять системные файлы. Windows запросит повышение прав. Результат появится после завершения команды.", PrimaryButtonText = "Запустить восстановление", CloseButtonText = "Отмена", DefaultButton = ContentDialogButton.Close };
-                    if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+                    if (await dialog.ShowAsync() != ContentDialogResult.Primary) { RecordRemediationCancellation(dism ? "DISM /RestoreHealth" : "SFC /scannow"); return; }
                     AiTaskStatusText.Text = "Восстановление выполняется в окне Windows. Приложение можно использовать; повторный запуск заблокирован.";
-                    int code = await RepairService.RunAsync(dism);
+                    int code = await RunTrackedActionAsync(dism ? "DISM /RestoreHealth" : "SFC /scannow", () => RepairService.RunAsync(dism), code => code == 3010 ? "Требуется перезагрузка Windows, затем повторная диагностика." : $"Код завершения: {code}. Проверьте журнал CBS/DISM и повторите диагностику.", code => code == 0 || code == 3010 ? "Completed" : "Failed");
                     if (_securityWindowClosed) return;
                     AiTaskStatusText.Text = code == 3010 ? "Команда завершилась: требуется перезагрузка Windows. Перезагрузка автоматически не выполняется." : $"Команда завершилась с кодом {code}. Оцените результат в журнале CBS/DISM и повторите диагностику; код сам по себе не гарантирует исправление всех проблем.";
                     _logService.Write("System", "SystemRepair", "AssistantTasks", dism ? "DISM /RestoreHealth завершён" : "SFC /scannow завершён", AiTaskStatusText.Text, severity: code == 0 || code == 3010 ? "Info" : "Warning");

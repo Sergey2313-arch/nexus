@@ -187,6 +187,46 @@ try
 finally { if (System.IO.Directory.Exists(settingsFolder)) System.IO.Directory.Delete(settingsFolder, true); }
 Console.WriteLine("AI model discovery, errors, response bounds and private settings checks passed.");
 
+var previousFile = new SecurityFinding("Warning", "Files", "Unsigned file", @"C:\Temp\app.exe | Authenticode: NotSigned; SHA256=old", "Review");
+var previousCpu = new SecurityFinding("Critical", "Hardware", "Повышенная температура: CPU", "CPU Temperature: 95", "Cool");
+var beforeSnapshot = new DiagnosticSnapshot(DateTime.UtcNow.AddMinutes(-1), new() { previousFile, previousCpu }, new() { new("Подозрительные файлы", true, "") }, new() { new("CPU", "CPU Temperature", 95) });
+var partialSnapshot = new DiagnosticSnapshot(DateTime.UtcNow, new(), new() { new("Подозрительные файлы", false, "Denied") }, new());
+var unavailableChanges = DiagnosticComparison.Compare(beforeSnapshot, partialSnapshot);
+Check(unavailableChanges.Count == 2 && System.Linq.Enumerable.All(unavailableChanges, c => c.Status == "Не удалось проверить"), "Unavailable stage/sensor must not report issue resolution");
+var carried = DiagnosticComparison.PreserveUnverified(partialSnapshot, unavailableChanges);
+var healthySnapshot = new DiagnosticSnapshot(DateTime.UtcNow.AddMinutes(1), new(), new() { new("Подозрительные файлы", true, "") }, new() { new("CPU", "CPU Temperature", 55) });
+var noLongerObserved = DiagnosticComparison.Compare(carried, healthySnapshot);
+Check(noLongerObserved.Count == 2 && System.Linq.Enumerable.All(noLongerObserved, c => c.Status == "Больше не обнаружено"), "Unverified findings must survive partial scans until a covered comparison");
+var changedEvidence = previousFile with { Evidence = @"c:\temp\APP.exe | Authenticode: NotSigned; SHA256=new" };
+var stillPresent = DiagnosticComparison.Compare(beforeSnapshot, healthySnapshot with { Findings = new() { changedEvidence } });
+Check(System.Linq.Enumerable.Any(stillPresent, c => c.Status == "Сохраняется" && c.Finding.Category == "Files"), "Changing hashes/case must not create false disappearance for the same file");
+var unrelated = new SecurityFinding("Warning", "Defender", "Outdated definitions", "Age=9", "Update");
+Check(DiagnosticComparison.Compare(healthySnapshot, healthySnapshot with { Findings = new() { unrelated } })[0].Status == "Новое обнаружение", "New findings must be identified");
+var historyFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "NexusHistory-" + Guid.NewGuid().ToString("N"));
+System.IO.Directory.CreateDirectory(historyFolder);
+try
+{
+    var snapshotPath = System.IO.Path.Combine(historyFolder, "snapshot.json");
+    DiagnosticSnapshotStore.Save(carried, snapshotPath);
+    var loaded = DiagnosticSnapshotStore.Load(snapshotPath)!;
+    Check(loaded.PendingFindings?.Count == 2 && loaded.Timestamp == carried.Timestamp, "Snapshot persistence must preserve pending findings and timestamps");
+    var databasePath = System.IO.Path.Combine(historyFolder, "history.db");
+    var journal = new NEXUS.LogService(databasePath);
+    journal.Write("Action", "Started", "operation-1", "Repair", "started");
+    journal.Write("Action", "Failed", "operation-1", "Repair", "code=5", severity: "Warning");
+    for (int i = 0; i < 20; i++) journal.Write("Process", "Started", "App", "Unrelated process event");
+    var history = new NEXUS.LogService(databasePath).GetLatest(2, "Action");
+    Check(history.Count == 2 && history[0].EventType == "Failed" && history[1].EventType == "Started", "Action history must survive reopening and filter before LIMIT, without losing failures under unrelated events");
+    journal.Write("System", "TempCleanup", "Maintenance", "Legacy cleanup", "Deleted 2");
+    Check(new NEXUS.LogService(databasePath).GetLatest(1, "Action")[0].Title == "Legacy cleanup", "Previously logged maintenance results must remain visible");
+}
+finally
+{
+    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+    System.IO.Directory.Delete(historyFolder, true);
+}
+Console.WriteLine("Before/after coverage, pending findings, stable file identity, snapshots and action history checks passed.");
+
 sealed class AiFixtureHandler : System.Net.Http.HttpMessageHandler
 {
     public string Payload = "", Authorization = "";

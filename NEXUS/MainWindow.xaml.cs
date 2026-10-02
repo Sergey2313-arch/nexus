@@ -275,6 +275,7 @@ namespace NEXUS
                         4 => "Clipboard",
                         5 => "System",
                         6 => "Security",
+                        7 => "Action",
                         _ => null
                     };
 
@@ -286,13 +287,7 @@ namespace NEXUS
 
                 var events =
                     _logService
-                    .GetLatest(750)
-                    .Where(item =>
-                        category == null ||
-                        string.Equals(
-                            item.Category,
-                            category,
-                            StringComparison.OrdinalIgnoreCase))
+.GetLatest(750, category)
                     .Where(item =>
                     {
                         if (string.IsNullOrWhiteSpace(search))
@@ -342,7 +337,7 @@ namespace NEXUS
                             IsExpanded = expanded.Contains(item.Id),
                             Icon = EventIcon(item.Category),
                             Accent = EventAccent(item.Severity),
-                            Summary = $"{item.Timestamp:dd.MM.yyyy HH:mm:ss} • {GetCategoryDisplayName(item.Category)} • {item.Source} • {item.Severity}",
+                            Summary = $"{item.Timestamp:dd.MM.yyyy HH:mm:ss} • {GetCategoryDisplayName(item.Category)} • {(item.Category == "Action" ? "NEXUS" : item.Source)} • {item.Severity}",
                             Time =
                                 item.Timestamp.Date ==
                                 DateTime.Today
@@ -397,6 +392,7 @@ namespace NEXUS
                 "Clipboard" => "БУФЕР",
                 "System" => "СИСТЕМА",
                 "Hardware" => "ЖЕЛЕЗО",
+                "Action" => "ИСПРАВЛЕНИЯ",
                 "Security" => "БЕЗОПАСНОСТЬ",
                 _ => category.ToUpperInvariant()
             };

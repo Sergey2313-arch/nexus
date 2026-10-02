@@ -38,6 +38,7 @@ public sealed partial class MainWindow
             var health = HealthAnalyzer.Analyze(result, readings);
             string hardwareSummary = $"Health Score: {health.OverallScore?.ToString() ?? "недостаточно данных"} • Железо: {health.HardwareScore?.ToString() ?? "нет данных"}/100 ({(health.HardwareComplete ? "ключевые датчики" : "частичные данные")}) • Безопасность: {health.SecurityScore}/100\n";
             ShowDiagnosticCards(result, health, readings);
+            UpdateDiagnosticComparison(result, health, readings);
             var allFindings = result.Findings.Concat(health.Findings).ToList();
             SecurityScanStatusText.Text = $"{(result.IsComplete ? "Проверка завершена" : "Проверка частичная")} • {result.Timestamp:HH:mm:ss}";
             SecurityResultsText.Text = hardwareSummary + $"Индикатор риска конфигурации: {result.RiskScore}/100\n" +

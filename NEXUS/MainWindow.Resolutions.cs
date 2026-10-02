@@ -48,9 +48,9 @@ public sealed partial class MainWindow
                     {
                         string command = action.Id == "firewall" ? "Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True -ErrorAction Stop" : action.Id == "defender-update" ? "Update-MpSignature -ErrorAction Stop" : "Start-MpScan -ScanType QuickScan -ErrorAction Stop";
                         var dialog = new ContentDialog { XamlRoot = ShellRoot.XamlRoot, RequestedTheme=ElementTheme.Dark, Title=action.Label, Content=action.Details + "\nWindows запросит права администратора. После выполнения повторите диагностику.", PrimaryButtonText="Выполнить", CloseButtonText="Отмена", DefaultButton=ContentDialogButton.Close };
-                        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+                        if (await dialog.ShowAsync() != ContentDialogResult.Primary) { RecordRemediationCancellation(action.Label); return; }
                         ResolutionStatusText.Text = "Выполняется: " + action.Label;
-                        int code = await RunFixedSecurityAction(command);
+                        int code = await RunTrackedActionAsync(action.Label, () => RunFixedSecurityAction(command), code => $"Команда завершилась с кодом {code}. Требуется повторная диагностика.", code => code == 0 ? "Completed" : "Failed");
                         if (_securityWindowClosed) return;
                         ResolutionStatusText.Text = $"{action.Label}: команда завершилась с кодом {code}. Повторите диагностику для проверки результата.";
                         _logService.Write("Security", "ResolutionAction", "FindingActions", action.Label, ResolutionStatusText.Text, severity:code==0?"Info":"Warning");
