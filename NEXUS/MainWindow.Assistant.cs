@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using NEXUS.Services;
+using NEXUS.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,9 +80,13 @@ public sealed partial class MainWindow
         var readings = CaptureHardwareReadings();
         if (readings.Any(r => r.Metric == "Disk Used" && r.Value >= 90)) plan.Add("Мало места: начните с анализа Temp, затем проверьте хранилище Windows.");
         if (readings.Any(r => r.Metric == "RAM Load" && r.Value >= 90)) plan.Add("RAM загружена: посмотрите приложения и выберите потребляющее память. Освобождение рабочего набора временно; проверьте причины потребления.");
-        if (readings.Any(r => r.Metric.Contains("Temperature") && r.Value >= (r.Metric == "Storage Temperature" ? 60 : 80))) plan.Add("Повышенная температура: проверьте нагрузку, вентиляторы и охлаждение. Программная очистка не заменяет обслуживание охлаждения.");
+        if (readings.Any(r => (r.Metric == "CPU Temperature" && r.Value >= 80) || (r.Metric == "GPU Temperature" && r.Value >= 85) || (r.Metric == "Storage Temperature" && r.Value >= 60))) plan.Add("Повышенная температура: проверьте нагрузку, вентиляторы и охлаждение. Программная очистка не заменяет обслуживание охлаждения.");
         if (_displayFindings.Any(f => f.Category == "Integrity" && f.Severity != "Info")) plan.Add("Есть признаки нарушения целостности: изучите отчёт; при подтверждении начните с DISM, затем SFC.");
-        foreach (var finding in _displayFindings.Where(f => f.Severity != "Info").Take(8)) plan.Add(finding.Title + "\n" + finding.Recommendation);
+        foreach (var finding in _displayFindings.Where(f => f.Severity != "Info").Take(8))
+        {
+            var resolution = FindingResolver.Resolve(finding);
+            plan.Add(finding.Title + "\n" + resolution.Explanation + "\n\n" + resolution.Steps + "\n\nПроверка результата: " + resolution.Verification);
+        }
         if (!_hasDiagnosticResult) plan.Add("Запустите диагностику: сейчас нет завершённого результата проверки безопасности.");
         if (plan.Count == 0) plan.Add("По доступным текущим показателям срочных задач не найдено. Проверьте покрытие диагностики и недоступные датчики.");
         AiPlanText.Text = "Локальный план по правилам NEXUS (не ответ ИИ):\n\n" + string.Join("\n\n", plan.Distinct());
