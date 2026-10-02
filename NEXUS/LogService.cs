@@ -33,7 +33,7 @@ namespace NEXUS
         private readonly string _databasePath;
         private readonly string _connectionString;
 
-        public LogService()
+        public LogService(string? databasePath = null)
         {
             string nexusFolder =
                 Path.Combine(
@@ -41,12 +41,11 @@ namespace NEXUS
                         Environment.SpecialFolder.LocalApplicationData),
                     "NEXUS");
 
+            if (databasePath != null) nexusFolder = Path.GetDirectoryName(Path.GetFullPath(databasePath))!;
             Directory.CreateDirectory(nexusFolder);
 
             _databasePath =
-                Path.Combine(
-                    nexusFolder,
-                    "nexus.db");
+                databasePath == null ? Path.Combine(nexusFolder, "nexus.db") : Path.GetFullPath(databasePath);
 
             _connectionString =
                 $"Data Source={_databasePath}";
@@ -105,7 +104,7 @@ namespace NEXUS
             command.ExecuteNonQuery();
         }
 
-        public void Write(
+        public bool Write(
             string category,
             string eventType,
             string source,
@@ -193,16 +192,18 @@ namespace NEXUS
                     severity);
 
                 command.ExecuteNonQuery();
+                return true;
             }
             catch
             {
                 // Журнал никогда не должен
                 // ломать основную работу NEXUS.
+                return false;
             }
         }
 
         public List<LogEvent> GetLatest(
-            int count = 250)
+            int count = 250, string? category = null)
         {
             List<LogEvent> result =
                 new List<LogEvent>();
@@ -232,6 +233,8 @@ namespace NEXUS
 
             FROM LogEvents
 
+            WHERE ($category IS NULL OR Category = $category OR ($category = 'Action' AND EventType IN ('MemoryTrim', 'TempCleanup', 'SystemRepair', 'ResolutionAction') AND Source IN ('Maintenance', 'AssistantTasks', 'FindingActions')))
+
             ORDER BY Id DESC
 
             LIMIT $count;
@@ -240,6 +243,7 @@ namespace NEXUS
             command.Parameters.AddWithValue(
                 "$count",
                 count);
+            command.Parameters.AddWithValue("$category", (object?)category ?? DBNull.Value);
 
             using SqliteDataReader reader =
                 command.ExecuteReader();

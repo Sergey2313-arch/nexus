@@ -5,111 +5,64 @@
     xmlns:local="using:NEXUS"
     Title="NEXUS">
 
-    <Grid Background="#0F1115">
-
+    <Grid x:Name="ShellRoot" Background="#0B1018" RequestedTheme="Dark" SizeChanged="ShellRoot_SizeChanged">
+        <Grid.Resources>
+            <Style x:Key="NavButton" TargetType="Button">
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Height" Value="50"/>
+                <Setter Property="Padding" Value="16,10"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="CornerRadius" Value="10"/>
+            </Style>
+            <Style x:Key="DiagnosticCard" TargetType="Border">
+                <Setter Property="Background" Value="#151E2B"/>
+                <Setter Property="BorderBrush" Value="#293548"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="14"/>
+                <Setter Property="Padding" Value="20"/>
+            </Style>
+            <Style x:Key="MutedText" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#A7B5C8"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+        </Grid.Resources>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="295"/>
+            <ColumnDefinition x:Name="SidebarColumn" Width="220"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
-        <!-- ========================= -->
-        <!--       ЛЕВОЕ МЕНЮ          -->
-        <!-- ========================= -->
-
-        <Border Grid.Column="0"
-                Background="#181A1F"
-                BorderBrush="#2B2E35"
-                BorderThickness="0,0,1,0">
-
-            <Grid Margin="10">
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <TextBlock Grid.Row="0"
-                           Text="NEXUS"
-                           FontSize="28"
-                           FontWeight="Bold"
-                           Margin="5,25,0,35"/>
-
-                <StackPanel Grid.Row="1"
-                            Spacing="12">
-
-                    <Button Content="Dashboard"
-                            Height="50"
-                            HorizontalAlignment="Stretch"
-                            Click="DashboardButton_Click"/>
-
-                    <Button Content="Devices"
-                            Height="50"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Button Content="Planner"
-                            Height="50"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Button Content="Logbook"
-                            Height="50"
-                            HorizontalAlignment="Stretch"
-                            Click="LogbookButton_Click"/>
-
-                    <Button Content="Maintenance"
-                            Height="50"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Button Content="AI Assistant"
-                            Height="50"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Button Content="Settings"
-                            Height="50"
-                            HorizontalAlignment="Stretch"/>
-
+        <Border Background="#101723" BorderBrush="#253043" BorderThickness="0,0,1,0">
+            <Grid Margin="16,28,16,20">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Spacing="6" Margin="12,0,0,32">
+                    <TextBlock x:Name="BrandText" Text="NEXUS" FontSize="30" FontWeight="Bold" CharacterSpacing="150" Foreground="#ECF4FF"/>
+                    <TextBlock x:Name="BrandSubtitleText" Text="SYSTEM INTELLIGENCE" FontSize="10" CharacterSpacing="130" Foreground="#7F94B3"/>
                 </StackPanel>
-
-                <TextBlock Grid.Row="2"
-                           Text="NEXUS v0.0.7"
-                           Foreground="#80848C"
-                           Margin="5,15"/>
-
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Spacing="8">
+                    <TextBlock x:Name="NavCaptionText" Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" Foreground="#7F94B3" Margin="12,0,0,12"/>
+                    <Button x:Name="OverviewNavButton" AutomationProperties.Name="Обзор системы" Style="{StaticResource NavButton}" Click="DashboardButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE80F;" FontSize="18"/><TextBlock x:Name="OverviewNavLabel" Text="Обзор системы"/></StackPanel></Button>
+                    <Button x:Name="ComponentsNavButton" AutomationProperties.Name="Компоненты" Style="{StaticResource NavButton}" Click="ComponentsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE7F4;" FontSize="18"/><TextBlock x:Name="ComponentsNavLabel" Text="Компоненты"/></StackPanel></Button>
+                    <Button x:Name="SensorsNavButton" AutomationProperties.Name="Датчики" Style="{StaticResource NavButton}" Click="SensorsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="SensorsNavLabel" Text="Датчики"/></StackPanel></Button>
+                    <Button x:Name="TemperaturesNavButton" AutomationProperties.Name="Температуры" Style="{StaticResource NavButton}" Click="TemperaturesButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9CA;" FontSize="18"/><TextBlock x:Name="TemperaturesNavLabel" Text="Температуры"/></StackPanel></Button>
+                    <Button x:Name="MaintenanceNavButton" AutomationProperties.Name="Очистка" Style="{StaticResource NavButton}" Click="MaintenanceButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE74D;" FontSize="18"/><TextBlock x:Name="MaintenanceNavLabel" Text="Очистка"/></StackPanel></Button>
+                    <Button x:Name="AiNavButton" AutomationProperties.Name="ИИ-помощник" Style="{StaticResource NavButton}" Click="AiButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE99A;" FontSize="18"/><TextBlock x:Name="AiNavLabel" Text="ИИ-помощник"/></StackPanel></Button>
+                    <Button x:Name="DiagnosticsNavButton" AutomationProperties.Name="Диагностика" Style="{StaticResource NavButton}" Click="DiagnosticsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="DiagnosticsNavLabel" Text="Диагностика"/></StackPanel></Button>
+                    <Button x:Name="EventsNavButton" AutomationProperties.Name="Журнал событий" Style="{StaticResource NavButton}" Click="EventHistoryNavButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE81C;" FontSize="18"/><TextBlock x:Name="EventsNavLabel" Text="Журнал событий"/></StackPanel></Button>
+                    <Button x:Name="LogbookNavButton" AutomationProperties.Name="Бортовой журнал" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock x:Name="LogbookNavLabel" Text="Бортовой журнал"/></StackPanel></Button>
+                </StackPanel></ScrollViewer>
+                <Border x:Name="SidebarFooter" Grid.Row="2" Background="#192435" CornerRadius="12" Padding="14">
+                    <StackPanel Spacing="6"><TextBlock Text="Мониторинг в реальном времени" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="ИИ: отправка только по кнопке" FontSize="11" Foreground="#A7B5C8"/></StackPanel>
+                </Border>
             </Grid>
         </Border>
-
-        <!-- ========================= -->
-        <!--      ОСНОВНАЯ ОБЛАСТЬ     -->
-        <!-- ========================= -->
-
         <Grid Grid.Column="1">
-
-            <Grid.RowDefinitions>
-                <RowDefinition Height="75"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- Верхние вкладки -->
-
-            <Border Grid.Row="0"
-                    Background="#202228"
-                    BorderBrush="#2B2E35"
-                    BorderThickness="0,0,0,1">
-
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="15,0"
-                            Spacing="10">
-
-                    <Button Content="Dashboard"
-                            Click="DashboardButton_Click"/>
-                    <Button Content="Logbook"
-                            Click="LogbookButton_Click"/>
-                    <Button Content="Planner"/>
-                    <Button Content="AI"/>
-
-                </StackPanel>
-
+            <Grid.RowDefinitions><RowDefinition Height="68"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Border Background="#101723" BorderBrush="#253043" BorderThickness="0,0,0,1" Padding="28,0">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock x:Name="PageTitleText" Text="Обзор системы" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="ЛОКАЛЬНАЯ ДИАГНОСТИКА" FontSize="10" CharacterSpacing="100" Foreground="#7F94B3" VerticalAlignment="Center"/>
+                </Grid>
             </Border>
 
             <!-- ========================= -->
@@ -126,25 +79,32 @@
 
                     <StackPanel>
 
-                        <TextBlock Text="Dashboard"
+                        <TextBlock Text="Обзор системы"
                                    FontSize="36"
                                    FontWeight="Bold"/>
 
-                        <TextBlock Text="Состояние системы NEXUS"
+                        <TextBlock Text="Нагрузка, температуры и состояние оборудования"
                                    FontSize="16"
-                                   Foreground="#9A9DA5"
+                                   Foreground="#A7B5C8"
                                    Margin="0,6,0,0"/>
 
                     </StackPanel>
+
+                    <Border Background="#162C3D" BorderBrush="#2C5872" BorderThickness="1" CornerRadius="14" Padding="24">
+                        <Grid ColumnSpacing="20"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel Spacing="8"><TextBlock Text="Узнайте, что требует внимания" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Проверка защиты, железа и системных событий с рекомендациями." Style="{StaticResource MutedText}"/></StackPanel>
+                            <Button Grid.Column="1" Content="Открыть диагностику →" Click="DiagnosticsButton_Click" VerticalAlignment="Center" Background="#69D4D0" Foreground="#0B2025" Padding="18,12"/>
+                        </Grid>
+                    </Border>
 
                     <!-- ========================= -->
                     <!--         УСТРОЙСТВО         -->
                     <!-- ========================= -->
 
-                    <Border Background="#181A1F"
-                            BorderBrush="#2B2E35"
+                    <Border Background="#151E2B"
+                            BorderBrush="#293548"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="14"
                             Padding="24">
 
                         <Grid>
@@ -165,7 +125,7 @@
                                            Text="Windows"
                                            Foreground="#999DA5"/>
 
-                                <TextBlock Text="NEXUS Agent connected"
+                                <TextBlock Text="Мониторинг запущен"
                                            Foreground="#72D572"/>
 
                             </StackPanel>
@@ -176,7 +136,7 @@
                                     Padding="16,8"
                                     VerticalAlignment="Top">
 
-                                <TextBlock Text="● ONLINE"
+                                <TextBlock Text="● LIVE"
                                            Foreground="#67D17A"
                                            FontWeight="Bold"/>
 
@@ -190,9 +150,10 @@
                     <!--       CPU / RAM / DISK    -->
                     <!-- ========================= -->
 
-                    <Grid ColumnSpacing="18">
+                    <Grid x:Name="OverviewLoadGrid" ColumnSpacing="18" RowSpacing="18">
 
-                        <Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+<Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -201,16 +162,16 @@
                         <!-- CPU -->
 
                         <Border Grid.Column="0"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="10">
 
                                 <TextBlock Text="CPU"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="CpuValueText"
                                            Text="0%"
@@ -225,7 +186,7 @@
 
                                 <TextBlock x:Name="CpuNameText"
                                            Text="CPU"
-                                           Foreground="#73777F"
+                                           Foreground="#91A1B8"
                                            FontSize="12"
                                            TextWrapping="Wrap"/>
 
@@ -236,16 +197,16 @@
                         <!-- RAM -->
 
                         <Border Grid.Column="1"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="10">
 
                                 <TextBlock Text="RAM"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="RamValueText"
                                            Text="0 GB"
@@ -260,7 +221,7 @@
 
                                 <TextBlock x:Name="RamDetailsText"
                                            Text="0 / 0 GB"
-                                           Foreground="#73777F"
+                                           Foreground="#91A1B8"
                                            FontSize="12"/>
 
                             </StackPanel>
@@ -270,16 +231,16 @@
                         <!-- DISK C -->
 
                         <Border Grid.Column="2"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="10">
 
                                 <TextBlock Text="DISK C:"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="DiskValueText"
                                            Text="0%"
@@ -294,12 +255,12 @@
 
                                 <TextBlock x:Name="DiskDetailsText"
                                            Text="0 / 0 GB"
-                                           Foreground="#73777F"
+                                           Foreground="#91A1B8"
                                            FontSize="12"/>
 
                                 <TextBlock x:Name="DiskStatusText"
                                            Text="Проверка..."
-                                           Foreground="#9A9DA5"
+                                           Foreground="#A7B5C8"
                                            FontSize="12"
                                            TextWrapping="Wrap"/>
 
@@ -313,9 +274,10 @@
                     <!--     CPU TEMP / GPU        -->
                     <!-- ========================= -->
 
-                    <Grid ColumnSpacing="18">
+                    <Grid x:Name="OverviewTemperatureGrid" ColumnSpacing="18" RowSpacing="18">
 
-                        <Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+<Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -323,16 +285,16 @@
                         <!-- CPU TEMPERATURE -->
 
                         <Border Grid.Column="0"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="10">
 
                                 <TextBlock Text="CPU TEMPERATURE"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="CpuTempText"
                                            Text="-- °C"
@@ -347,7 +309,7 @@
 
                                 <TextBlock x:Name="CpuTempStatusText"
                                            Text="Получение данных..."
-                                           Foreground="#73777F"
+                                           Foreground="#91A1B8"
                                            FontSize="12"
                                            TextWrapping="Wrap"/>
 
@@ -358,16 +320,16 @@
                         <!-- GPU -->
 
                         <Border Grid.Column="1"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="10">
 
                                 <TextBlock Text="GPU"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="GpuLoadText"
                                            Text="--%"
@@ -382,13 +344,13 @@
 
                                 <TextBlock x:Name="GpuNameText"
                                            Text="Поиск видеокарты..."
-                                           Foreground="#73777F"
+                                           Foreground="#91A1B8"
                                            FontSize="12"
                                            TextWrapping="Wrap"/>
 
                                 <TextBlock x:Name="GpuTempText"
                                            Text="Температура: -- °C"
-                                           Foreground="#73777F"
+                                           Foreground="#91A1B8"
                                            FontSize="12"
                                            TextWrapping="Wrap"/>
 
@@ -402,10 +364,10 @@
                     <!--         SSD HEALTH        -->
                     <!-- ========================= -->
 
-                    <Border Background="#181A1F"
-                            BorderBrush="#2B2E35"
+                    <Border Background="#151E2B"
+                            BorderBrush="#293548"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="14"
                             Padding="24">
 
                         <StackPanel Spacing="18">
@@ -420,7 +382,7 @@
                                 <StackPanel Spacing="5">
 
                                     <TextBlock Text="SSD HEALTH"
-                                               Foreground="#9A9DA5"/>
+                                               Foreground="#A7B5C8"/>
 
                                     <TextBlock x:Name="StorageNameText"
                                                Text="Поиск накопителя..."
@@ -432,7 +394,7 @@
                                 <TextBlock x:Name="StorageStatusText"
                                            Grid.Column="1"
                                            Text="Проверка..."
-                                           Foreground="#9A9DA5"
+                                           Foreground="#A7B5C8"
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center"/>
 
@@ -459,7 +421,7 @@
                                             Spacing="4">
 
                                     <TextBlock Text="Температура"
-                                               Foreground="#73777F"/>
+                                               Foreground="#91A1B8"/>
 
                                     <TextBlock x:Name="StorageTempText"
                                                Text="-- °C"
@@ -475,7 +437,7 @@
                                             Spacing="4">
 
                                     <TextBlock Text="Остаточный ресурс"
-                                               Foreground="#73777F"/>
+                                               Foreground="#91A1B8"/>
 
                                     <TextBlock x:Name="StorageHealthText"
                                                Text="--%"
@@ -491,7 +453,7 @@
                                             Spacing="4">
 
                                     <TextBlock Text="Ресурс использован"
-                                               Foreground="#73777F"/>
+                                               Foreground="#91A1B8"/>
 
                                     <TextBlock x:Name="StorageLifeUsedText"
                                                Text="--%"
@@ -507,7 +469,7 @@
                                             Spacing="4">
 
                                     <TextBlock Text="Время работы"
-                                               Foreground="#73777F"/>
+                                               Foreground="#91A1B8"/>
 
                                     <TextBlock x:Name="StoragePowerOnText"
                                                Text="-- ч"
@@ -522,7 +484,7 @@
                                             Spacing="4">
 
                                     <TextBlock Text="Включений"
-                                               Foreground="#73777F"/>
+                                               Foreground="#91A1B8"/>
 
                                     <TextBlock x:Name="StoragePowerCyclesText"
                                                Text="--"
@@ -537,7 +499,7 @@
                                             Spacing="4">
 
                                     <TextBlock Text="Накопитель"
-                                               Foreground="#73777F"/>
+                                               Foreground="#91A1B8"/>
 
                                     <TextBlock x:Name="StorageSpaceText"
                                                Text="-- / -- GB"
@@ -549,7 +511,7 @@
 
                             <TextBlock x:Name="StorageIoText"
                                        Text="Прочитано: -- | Записано: --"
-                                       Foreground="#73777F"
+                                       Foreground="#91A1B8"
                                        FontSize="12"/>
 
                         </StackPanel>
@@ -570,16 +532,16 @@
                         <!-- UPTIME -->
 
                         <Border Grid.Column="0"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="8">
 
                                 <TextBlock Text="UPTIME"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="UptimeText"
                                            Text="00:00:00"
@@ -587,7 +549,7 @@
                                            FontWeight="SemiBold"/>
 
                                 <TextBlock Text="Система работает стабильно"
-                                           Foreground="#73777F"/>
+                                           Foreground="#91A1B8"/>
 
                             </StackPanel>
 
@@ -596,16 +558,16 @@
                         <!-- LAST EVENT -->
 
                         <Border Grid.Column="1"
-                                Background="#181A1F"
-                                BorderBrush="#2B2E35"
+                                Background="#151E2B"
+                                BorderBrush="#293548"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="14"
                                 Padding="22">
 
                             <StackPanel Spacing="8">
 
                                 <TextBlock Text="ПОСЛЕДНЕЕ СОБЫТИЕ"
-                                           Foreground="#9A9DA5"/>
+                                           Foreground="#A7B5C8"/>
 
                                 <TextBlock x:Name="LastEventText"
                                            Text="NEXUS started"
@@ -614,7 +576,7 @@
 
                                 <TextBlock x:Name="LastEventTimeText"
                                            Text="System"
-                                           Foreground="#73777F"/>
+                                           Foreground="#91A1B8"/>
 
                             </StackPanel>
 
@@ -626,267 +588,164 @@
 
             </ScrollViewer>
 
+            <ScrollViewer x:Name="ComponentsView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="20">
+                    <TextBlock Text="Компоненты компьютера" FontSize="32" FontWeight="Bold"/>
+                    <TextBlock Text="Модели, характеристики и связь с живыми датчиками" Style="{StaticResource MutedText}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12"><Button Content="Обновить состав" Click="RefreshComponentsButton_Click"/><ComboBox x:Name="ComponentFilterComboBox" Width="200" SelectedIndex="0" SelectionChanged="ComponentFilterComboBox_SelectionChanged"><ComboBoxItem Content="Все компоненты"/><ComboBoxItem Content="Процессор"/><ComboBoxItem Content="Видеокарта"/><ComboBoxItem Content="Оперативная память"/><ComboBoxItem Content="Материнская плата"/><ComboBoxItem Content="Накопители"/><ComboBoxItem Content="BIOS"/></ComboBox></StackPanel>
+                    <TextBlock x:Name="ComponentsStatusText" Text="Откройте раздел для загрузки" Style="{StaticResource MutedText}"/>
+                    <ItemsControl x:Name="ComponentsList"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,12"><StackPanel Spacing="10"><TextBlock Text="{Binding Kind}" Foreground="#69D4D0" FontSize="12"/><TextBlock Text="{Binding Name}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Details}" TextWrapping="Wrap"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    <TextBlock Text="Блок питания и некоторые контроллеры не сообщают модель Windows. Отсутствующие данные не подменяются предположениями." Style="{StaticResource MutedText}" FontSize="12"/>
+                </StackPanel>
+            </ScrollViewer>
+            <Grid x:Name="SensorsView" Grid.Row="1" Visibility="Collapsed" Margin="28">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <StackPanel Spacing="8" Margin="0,0,0,16"><TextBlock Text="Датчики • LIVE" FontSize="32" FontWeight="Bold"/><TextBlock x:Name="SensorsStatusText" Text="Получение показаний" Style="{StaticResource MutedText}"/></StackPanel>
+                <TextBox x:Name="SensorSearchBox" Grid.Row="1" PlaceholderText="Найти устройство или датчик" TextChanged="SensorSearchBox_TextChanged" Margin="0,0,0,16"/>
+                <ListView x:Name="LiveSensorsList" Grid.Row="2" SelectionMode="None" HorizontalContentAlignment="Stretch"><ListView.ItemTemplate><DataTemplate>
+                    <Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,8"><Grid ColumnSpacing="18"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Spacing="5"><TextBlock Text="{Binding Device}" Foreground="#A7B5C8" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Range}" Foreground="#91A1B8" FontSize="12" TextWrapping="Wrap"/></StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center"><TextBlock Text="{Binding ValueText}" FontSize="25" FontWeight="Bold" Foreground="#69D4D0"/><TextBlock Text="{Binding Kind}" Foreground="#91A1B8" FontSize="11"/></StackPanel>
+                    </Grid></Border>
+                </DataTemplate></ListView.ItemTemplate></ListView>
+            </Grid>
+            <ScrollViewer x:Name="TemperaturesView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="20">
+                    <TextBlock Text="Температуры и охлаждение" FontSize="32" FontWeight="Bold"/>
+                    <TextBlock Text="Живые показания на условной схеме ПК. Нажмите компонент, чтобы посмотреть его характеристики." Style="{StaticResource MutedText}"/>
+                    <Border Style="{StaticResource DiagnosticCard}">
+                        <Grid x:Name="ThermalDiagramGrid" RowSpacing="14" ColumnSpacing="14"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="МАТЕРИНСКАЯ ПЛАТА / УСЛОВНАЯ СХЕМА" Grid.ColumnSpan="2" FontSize="11" Foreground="#91A1B8"/>
+                            <Button Grid.Row="1" Tag="CPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203848" Padding="24"><StackPanel Spacing="10"><TextBlock Text="CPU • процессор"/><TextBlock x:Name="DiagramCpuText" TextWrapping="Wrap" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="1" Grid.Column="1" Tag="RAM" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#203028" Padding="24"><StackPanel Spacing="10"><TextBlock Text="RAM • оперативная память" TextWrapping="Wrap"/><TextBlock x:Name="DiagramRamText" Text="— %" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="2" Tag="GPU" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#2A2943" Padding="24"><StackPanel Spacing="10"><TextBlock Text="GPU • видеокарта"/><TextBlock x:Name="DiagramGpuText" TextWrapping="Wrap" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                            <Button Grid.Row="2" Grid.Column="1" Tag="Storage" Click="DiagramComponent_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Background="#3A3021" Padding="24"><StackPanel Spacing="10"><TextBlock Text="SSD / HDD • накопители" TextWrapping="Wrap"/><TextBlock x:Name="DiagramStorageText" TextWrapping="Wrap" Text="— °C" FontSize="32" FontWeight="Bold"/></StackPanel></Button>
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Name="ThermalStatusText" Text="Ожидаем датчики" Style="{StaticResource MutedText}"/>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Процессор" FontSize="20" FontWeight="SemiBold"/><TextBlock x:Name="ThermalCpuText" Text="— °C" FontSize="32" Foreground="#69D4D0"/><Viewbox Stretch="Fill" Height="88"><Canvas Width="600" Height="88"><Line X1="0" Y1="87" X2="600" Y2="87" Stroke="#293548"/><Polyline x:Name="CpuTemperatureLine" Stroke="#69D4D0" StrokeThickness="2"/></Canvas></Viewbox><TextBlock Text="Последние 60 обновлений • шкала 0–110 °C • пропуски не соединяются" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Видеокарта" FontSize="20" FontWeight="SemiBold"/><TextBlock x:Name="ThermalGpuText" Text="— °C" FontSize="32" Foreground="#BCA3FF"/><Viewbox Stretch="Fill" Height="88"><Canvas Width="600" Height="88"><Line X1="0" Y1="87" X2="600" Y2="87" Stroke="#293548"/><Polyline x:Name="GpuTemperatureLine" Stroke="#BCA3FF" StrokeThickness="2"/></Canvas></Viewbox><TextBlock Text="Последние 60 обновлений • шкала 0–110 °C • пропуски не соединяются" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Накопитель" FontSize="20" FontWeight="SemiBold"/><TextBlock x:Name="ThermalStorageText" Text="— °C" FontSize="32" Foreground="#FFC857"/><Viewbox Stretch="Fill" Height="88"><Canvas Width="600" Height="88"><Line X1="0" Y1="87" X2="600" Y2="87" Stroke="#293548"/><Polyline x:Name="StorageTemperatureLine" Stroke="#FFC857" StrokeThickness="2"/></Canvas></Viewbox><TextBlock Text="Последние 60 обновлений • шкала 0–110 °C • пропуски не соединяются" Style="{StaticResource MutedText}" FontSize="11"/></StackPanel></Border>
+                </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer x:Name="MaintenanceView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="22">
+                    <TextBlock Text="Очистка и обслуживание" FontSize="32" FontWeight="Bold"/>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="14"><TextBlock Text="Оперативная память" FontSize="23" FontWeight="SemiBold"/><TextBlock x:Name="MaintenanceRamText" Text="Получение данных" FontSize="28" Foreground="#69D4D0"/><TextBlock Text="Кнопка уменьшает рабочий набор самого NEXUS. Другие программы не закрываются. Это не очистка всей RAM; Windows самостоятельно управляет свободной и кэшированной памятью." Style="{StaticResource MutedText}"/><Button x:Name="TrimMemoryButton" Content="Освободить память NEXUS" Click="TrimMemoryButton_Click"/><TextBlock Text="Также можно уменьшить рабочий набор выбранного приложения своего сеанса. Память может снова загрузиться, а следующий отклик приложения — замедлиться. Системные процессы исключены." Style="{StaticResource MutedText}"/><Button x:Name="RefreshMemoryProcessesButton" Content="Показать приложения" Click="RefreshMemoryProcessesButton_Click"/><ComboBox x:Name="MemoryProcessComboBox" PlaceholderText="Выберите приложение" DisplayMemberPath="Label" HorizontalAlignment="Stretch"/><Button x:Name="TrimSelectedMemoryButton" Content="Освободить RAM выбранного приложения" Click="TrimSelectedMemoryButton_Click" IsEnabled="False"/><TextBlock x:Name="MemoryActionStatusText" Text="Нажмите кнопку для выполнения действия" TextWrapping="Wrap" Foreground="#69D4D0" IsTextSelectionEnabled="True"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="14"><TextBlock Text="Временные файлы пользователя" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="Только файлы в пользовательском Temp старше 7 дней. Перед удалением — объём и список. Занятые, изменённые файлы и ссылки пропускаются; документы и загрузки не очищаются." Style="{StaticResource MutedText}"/><TextBlock x:Name="TempPreviewText" Text="Сначала выполните анализ" FontSize="20"/><StackPanel Orientation="Horizontal" Spacing="12"><Button x:Name="AnalyzeTempButton" Content="Анализировать Temp" Click="AnalyzeTempButton_Click"/><Button x:Name="CleanTempButton" Content="Удалить выбранные временные файлы" Click="CleanTempButton_Click" IsEnabled="False"/></StackPanel><Expander Header="Файлы к удалению (первые 100)" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock x:Name="TempFilesText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander></StackPanel></Border>
+                    <Button Content="Открыть параметры хранилища Windows" Click="WindowsStorageButton_Click"/>
+                    <TextBlock x:Name="MaintenanceStatusText" Text="Действия выполняются только по нажатию кнопок" Style="{StaticResource MutedText}"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="AiView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="20">
+                    <StackPanel Spacing="8"><TextBlock Text="ИИ-помощник" FontSize="32" FontWeight="Bold"/><TextBlock Text="Разбор проблем и встроенные задачи для вашего ПК" Style="{StaticResource MutedText}"/></StackPanel>
+                    <Expander Header="Подключить модель" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel Spacing="12">
+                        <TextBlock Text="Локальная модель через Ollama или совместимый API. Введите имя доступной модели; она не устанавливается автоматически." TextWrapping="Wrap"/>
+                        <TextBox x:Name="AiEndpointBox" Header="URL chat/completions" Text="http://localhost:11434/v1/chat/completions"/>
+                        <TextBox x:Name="AiModelBox" Header="Имя модели" PlaceholderText="Имя модели из вашего сервера"/>
+                        <PasswordBox x:Name="AiApiKeyBox" Header="API-ключ (для локальной модели обычно не нужен)"/><Button x:Name="AiLoadModelsButton" Content="Загрузить список моделей" Tag="models" Click="AiConnectionButton_Click"/><ComboBox x:Name="AiModelsComboBox" Header="Модели, доступные серверу" PlaceholderText="Загрузите список или введите имя выше" HorizontalAlignment="Stretch" SelectionChanged="AiModelsComboBox_SelectionChanged"/><Button x:Name="AiTestConnectionButton" Content="Проверить ответ модели (отправить тест)" Tag="test" Click="AiConnectionButton_Click"/><TextBlock Text="Тест отправляет короткий вопрос без показателей ПК и истории чата. У удалённого сервиса запрос может расходовать оплачиваемые токены." Style="{StaticResource MutedText}" FontSize="12"/><Button x:Name="AiSaveSettingsButton" Content="Сохранить адрес и модель" Click="AiSaveSettingsButton_Click"/><Button x:Name="AiConnectionCancelButton" Content="Отменить проверку подключения" Click="AiCancelButton_Click" IsEnabled="False"/><TextBlock x:Name="AiConnectionStatusText" Text="Укажите сервер и модель. Автоматических сетевых запросов нет." TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                        <CheckBox x:Name="AiShareContextCheckBox" Content="Передавать модели краткие показатели и названия проблем" IsChecked="False"/><Expander Header="Посмотреть контекст ПК перед отправкой" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel Spacing="10"><Button Content="Обновить предпросмотр" Click="AiPreviewContextButton_Click"/><TextBlock x:Name="AiContextPreviewText" Text="Нажмите обновление: предпросмотр ничего не отправляет серверу. При отправке показатели обновляются." TextWrapping="Wrap" IsTextSelectionEnabled="True"/></StackPanel></Expander>
+                        <TextBlock Text="Запросы отправляются только по кнопке. Ключ хранится только в памяти этого окна. Без этой галочки отправляются лишь сообщения чата; пути файлов, команды процессов, сетевые адреса и буфер обмена в контекст ПК не включаются." Style="{StaticResource MutedText}" FontSize="12"/>
+                    </StackPanel></Expander>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Чат с моделью" FontSize="23" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="AiChatText" Text="Настройте модель и задайте вопрос. Встроенные задачи ниже доступны и без подключения ИИ." TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                        <TextBox x:Name="AiQuestionBox" PlaceholderText="Например: почему тормозит ПК и что проверить?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" MaxLength="4000"/>
+                        <StackPanel Orientation="Horizontal" Spacing="12"><Button x:Name="AiSendButton" Content="Спросить ИИ" Click="AiSendButton_Click"/><Button x:Name="AiCancelButton" Content="Отмена запроса" Click="AiCancelButton_Click" IsEnabled="False"/><Button x:Name="AiClearButton" Content="Очистить чат" Click="AiClearButton_Click"/></StackPanel>
+                        <TextBlock x:Name="AiStatusText" Text="Модель не подключена" Style="{StaticResource MutedText}"/>
+                    </StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="План действий по текущим данным" FontSize="23" FontWeight="SemiBold"/><Button Content="Обновить план" Click="AiRefreshPlanButton_Click"/><TextBlock x:Name="AiPlanText" Text="Нажмите «Обновить план» для локального анализа показателей. Это правила NEXUS, а не ответ модели." TextWrapping="Wrap"/></StackPanel></Border>
+                    <TextBlock Text="Выполнить задачу" FontSize="25" FontWeight="SemiBold"/>
+                    <TextBlock Text="Модель даёт объяснение. Эти кнопки запускают конкретные функции NEXUS; текст модели не выполняется как команда." Style="{StaticResource MutedText}"/>
+                    <ItemsControl x:Name="AssistantTasksList"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,12"><StackPanel Spacing="12"><TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="{Binding Details}" TextWrapping="Wrap"/><Button Content="{Binding ButtonText}" Tag="{Binding Id}" Click="AssistantTaskButton_Click"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    <TextBlock x:Name="AiTaskStatusText" Text="Действия ещё не запускались" Style="{StaticResource MutedText}"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="DiagnosticsView" Grid.Row="1" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="28" Spacing="22">
+                    <StackPanel Spacing="8"><TextBlock Text="Диагностика системы" FontSize="34" FontWeight="Bold"/><TextBlock Text="От проверки — к понятному плану действий" Style="{StaticResource MutedText}" FontSize="16"/></StackPanel>
+                    <Border Style="{StaticResource DiagnosticCard}" Background="#162C3D" BorderBrush="#2C5872">
+                        <StackPanel Spacing="16">
+                            <TextBlock x:Name="SecurityScanStatusText" Text="Готово к проверке" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock Text="Восемь этапов: процессы, автозагрузка, службы, файлы, сеть, защита Windows, целостность и анализ признаков." Style="{StaticResource MutedText}"/>
+                            <StackPanel x:Name="ScanActionsPanel" Orientation="Horizontal" Spacing="10">
+                                <Button x:Name="ScanSystemButton" Content="Проверить систему" Click="ScanSystemButton_Click" Background="#69D4D0" Foreground="#0B2025" Padding="20,12" FontWeight="SemiBold"/>
+                                <Button x:Name="CancelSecurityScanButton" Content="Отмена" IsEnabled="False" Click="CancelSecurityScanButton_Click" Padding="16,12"/>
+                                <Button x:Name="OpenDiagnosticReportButton" Content="Открыть отчёт" IsEnabled="False" Click="OpenDiagnosticReportButton_Click" Padding="16,12"/>
+                            </StackPanel>
+                            <ProgressBar x:Name="SecurityScanProgress" Minimum="0" Maximum="8" Value="0" Foreground="#69D4D0"/>
+                            <TextBlock x:Name="ScanCoverageText" Text="Для SFC, DISM и журнала Security нужны права администратора. Остальные доступные проверки выполнятся без них." Style="{StaticResource MutedText}" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                    <Grid x:Name="HealthCardsGrid" ColumnSpacing="12" RowSpacing="12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock Text="ОБЩИЙ HEALTH SCORE" Foreground="#A7B5C8" FontSize="11"/><TextBlock x:Name="OverallHealthText" Text="—" FontSize="36" FontWeight="Bold" Foreground="#69D4D0"/><TextBlock x:Name="OverallHealthDetailText" Text="Проверка ещё не запускалась" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel></Border>
+                        <Border Grid.Column="1" Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock Text="БЕЗОПАСНОСТЬ" Foreground="#A7B5C8" FontSize="11"/><TextBlock x:Name="SecurityHealthText" Text="—" FontSize="36" FontWeight="Bold"/><TextBlock x:Name="SecurityHealthDetailText" Text="Нет результатов" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel></Border>
+                        <Border Grid.Column="2" Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock Text="ОБОРУДОВАНИЕ" Foreground="#A7B5C8" FontSize="11"/><TextBlock x:Name="HardwareHealthText" Text="—" FontSize="36" FontWeight="Bold"/><TextBlock x:Name="HardwareHealthDetailText" Text="Нет результатов" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel></Border>
+                    </Grid>
+                    <TextBlock Text="Оценки отражают найденные признаки. Они не гарантируют отсутствие угроз или неисправностей." Style="{StaticResource MutedText}" FontSize="12"/>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="14">
+                        <TextBlock Text="Этапы проверки" FontSize="20" FontWeight="SemiBold"/>
+                        <ItemsControl x:Name="ScanStagesList"><ItemsControl.ItemTemplate><DataTemplate>
+                            <Grid Margin="0,6" ColumnSpacing="14"><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Symbol}" Foreground="{Binding Accent}" FontSize="18"/>
+                                <StackPanel Grid.Column="1" Spacing="4"><TextBlock Text="{Binding Name}" FontWeight="SemiBold"/><TextBlock Text="{Binding Details}" Style="{StaticResource MutedText}" FontSize="12"/></StackPanel>
+                            </Grid>
+                        </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    </StackPanel></Border>
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Spacing="6"><TextBlock Text="Находки и рекомендации" FontSize="24" FontWeight="SemiBold"/><TextBlock x:Name="FindingsCountText" Text="Результаты появятся после проверки" Style="{StaticResource MutedText}"/></StackPanel>
+                        <ComboBox x:Name="FindingsFilterComboBox" Grid.Column="1" Width="200" SelectedIndex="0" SelectionChanged="FindingsFilterComboBox_SelectionChanged" VerticalAlignment="Center"><ComboBoxItem Content="Требуют внимания"/><ComboBoxItem Content="Критические"/><ComboBoxItem Content="Предупреждения"/><ComboBoxItem Content="Все, включая сведения"/></ComboBox>
+                    </Grid>
+                    <Border x:Name="FindingsEmptyPanel" Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="8"><TextBlock x:Name="FindingsEmptyTitleText" Text="Начните с проверки системы" FontSize="19" FontWeight="SemiBold"/><TextBlock x:Name="FindingsEmptyDetailText" Text="Здесь будут объяснения найденных проблем и действия, которые помогут их проверить." Style="{StaticResource MutedText}"/></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Сравнение до / после" FontSize="23" FontWeight="SemiBold"/><TextBlock x:Name="DiagnosticComparisonStatusText" Text="Сравнение появится после двух завершившихся проверок. Недоступные этапы не считаются исправленными." Style="{StaticResource MutedText}"/><ItemsControl x:Name="DiagnosticComparisonList"><ItemsControl.ItemTemplate><DataTemplate><Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,4"><Expander.Header><StackPanel Spacing="5"><TextBlock Text="{Binding Status}" Foreground="{Binding Accent}" FontWeight="SemiBold"/><TextBlock Text="{Binding Title}" TextWrapping="Wrap"/></StackPanel></Expander.Header><StackPanel Spacing="10"><TextBlock Text="{Binding Details}" TextWrapping="Wrap"/><TextBlock Text="{Binding Evidence}" TextWrapping="Wrap" IsTextSelectionEnabled="True" FontFamily="Consolas"/></StackPanel></Expander></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="История исправлений" FontSize="23" FontWeight="SemiBold"/><TextBlock x:Name="RemediationHistoryStatusText" Text="История встроенных действий" Style="{StaticResource MutedText}"/><Button Content="Обновить историю" Click="RefreshRemediationHistoryButton_Click"/><Button Content="Повторить диагностику после действий" Click="VerifyResolutionButton_Click"/><ItemsControl x:Name="RemediationHistoryList"><ItemsControl.ItemTemplate><DataTemplate><Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,4"><Expander.Header><StackPanel Spacing="5"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Status}" Foreground="{Binding Accent}"/><TextBlock Text="{Binding Time}" Foreground="#A7B5C8" FontSize="12"/></StackPanel></Expander.Header><TextBlock Text="{Binding Details}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></StackPanel></Border>
+                    <TextBlock x:Name="ResolutionStatusText" Text="Действия доступны в карточках находок. После исправления повторите проверку." Style="{StaticResource MutedText}"/>
+                    <ItemsControl x:Name="SecurityFindingsList"><ItemsControl.ItemTemplate><DataTemplate>
+                        <Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,12"><StackPanel Spacing="12">
+                            <TextBlock Text="{Binding Label}" Foreground="{Binding Accent}" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Title}" FontSize="19" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Recommendation}" TextWrapping="Wrap"/><Button Content="{Binding Resolution.Label}" Tag="{Binding Resolution}" Click="ResolveFindingButton_Click"/><TextBlock Text="{Binding Resolution.Details}" Style="{StaticResource MutedText}" FontSize="12"/><Expander Header="Почему это обнаружено" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock Text="{Binding Resolution.Explanation}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander><Expander Header="Подробный план решения" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock Text="{Binding Resolution.Steps}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander><Expander Header="Как проверить результат" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel Spacing="12"><TextBlock Text="{Binding Resolution.Verification}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/><Button Content="Повторить диагностику" Click="VerifyResolutionButton_Click"/></StackPanel></Expander>
+                            <Expander Header="Основание проверки" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock Text="{Binding Evidence}" TextWrapping="Wrap" IsTextSelectionEnabled="True" FontFamily="Consolas" FontSize="12"/></Expander>
+                        </StackPanel></Border>
+                    </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    <Expander Header="Показания оборудования" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><ItemsControl x:Name="DiagnosticReadingsList"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,6"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Expander>
+                    <Expander Header="Текстовая сводка" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock x:Name="SecurityResultsText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander>
+                </StackPanel>
+            </ScrollViewer>
+
             <!-- ========================= -->
             <!--          LOGBOOK          -->
             <!-- ========================= -->
 
-            <Grid x:Name="LogbookView"
-                  Grid.Row="1"
-                  Visibility="Collapsed"
-                  Margin="30">
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Заголовок -->
-                <Grid Grid.Row="0"
-                      Margin="0,0,0,18">
-
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Logbook"
-                                   FontSize="36"
-                                   FontWeight="Bold"/>
-
-                        <TextBlock Text="Бортовой журнал NEXUS"
-                                   FontSize="16"
-                                   Foreground="#9A9DA5"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Spacing="12">
-
-                        <ToggleSwitch x:Name="LiveToggle"
-                                      Header="LIVE"
-                                      IsOn="True"/>
-
-                        <Button Content="Обновить"
-                                Click="RefreshLogbookButton_Click"/>
-                    </StackPanel>
-
+            <Grid x:Name="LogbookView" Grid.Row="1" Visibility="Collapsed" Margin="28">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <StackPanel Spacing="14" Margin="0,0,0,16"><TextBlock Text="Бортовой журнал" FontSize="32" FontWeight="Bold"/><StackPanel Orientation="Horizontal" Spacing="12"><Button Content="История событий" Click="ShowEventHistoryButton_Click"/><Button Content="Процессы" Click="ShowProcessesButton_Click"/><ToggleSwitch x:Name="LiveToggle" Header="Автообновление" IsOn="True"/><Button Content="Обновить" Click="RefreshLogbookButton_Click"/></StackPanel></StackPanel>
+                <Grid x:Name="LogFiltersPanel" Grid.Row="1" Margin="0,0,0,14" ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><ComboBox x:Name="CategoryFilterComboBox" HorizontalAlignment="Stretch"><ComboBoxItem Content="Все"/><ComboBoxItem Content="Программы"/><ComboBoxItem Content="Процессы"/><ComboBoxItem Content="Файлы"/><ComboBoxItem Content="Буфер обмена"/><ComboBoxItem Content="Система"/><ComboBoxItem Content="Безопасность"/><ComboBoxItem Content="Исправления"/></ComboBox><TextBox x:Name="LogbookSearchBox" Grid.Column="1" PlaceholderText="Поиск по событиям, пути, PID"/></Grid>
+                <Grid x:Name="EventHistoryPanel" Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions><TextBlock x:Name="LogbookCountText" Text="0 событий" Margin="0,0,0,12" Foreground="#A7B5C8"/>
+                    <ListView x:Name="LogbookList" Grid.Row="1" SelectionMode="None" HorizontalContentAlignment="Stretch"><ListView.ItemTemplate><DataTemplate>
+                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,8">
+                            <Expander.Header><Grid ColumnSpacing="14"><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid><FontIcon Glyph="{Binding Icon}" Foreground="{Binding Accent}" Visibility="{Binding FallbackIconVisibility}"/><Image Source="{Binding ApplicationIcon}" Width="24" Height="24"/></Grid><StackPanel Grid.Column="1" Spacing="5"><TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Summary}" Foreground="#A7B5C8" FontSize="12" TextWrapping="Wrap"/></StackPanel></Grid></Expander.Header>
+                            <StackPanel Spacing="12"><TextBlock Text="{Binding Details}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/><TextBlock Text="{Binding PathDisplay}" FontFamily="Consolas" TextWrapping="Wrap" IsTextSelectionEnabled="True"/><StackPanel Orientation="Horizontal" Spacing="10"><Button Content="Копировать событие" Tag="{Binding}" Click="CopyEventButton_Click"/><Button Content="Открыть расположение" Tag="{Binding FilePath}" IsEnabled="{Binding HasPath}" ToolTipService.ToolTip="Открывает папку файла. Если файл удалён — существующую родительскую папку." Click="OpenEventLocationButton_Click"/></StackPanel></StackPanel>
+                        </Expander>
+                    </DataTemplate></ListView.ItemTemplate></ListView>
                 </Grid>
-
-                <!-- Фильтры -->
-                <Border Grid.Row="1"
-                        Background="#181A1F"
-                        BorderBrush="#2B2E35"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="14"
-                        Margin="0,0,0,18">
-
-                    <Grid ColumnSpacing="12">
-
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="220"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <ComboBox x:Name="CategoryFilterComboBox"
-                                  PlaceholderText="Категория"
-                                  HorizontalAlignment="Stretch">
-                            <ComboBoxItem Content="Все"/>
-                            <ComboBoxItem Content="Программы"/>
-                            <ComboBoxItem Content="Процессы"/>
-                            <ComboBoxItem Content="Файлы"/>
-                            <ComboBoxItem Content="Буфер обмена"/>
-                            <ComboBoxItem Content="Система"/>
-                        </ComboBox>
-
-                        <TextBox x:Name="LogbookSearchBox"
-                                 Grid.Column="1"
-                                 PlaceholderText="Поиск по журналу..."/>
-
-                    </Grid>
-
-                </Border>
-
-                <!-- Основная область -->
-                <Grid Grid.Row="2"
-                      ColumnSpacing="18">
-
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="360"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Запущенные процессы -->
-                    <Border Grid.Column="0"
-                            Background="#181A1F"
-                            BorderBrush="#2B2E35"
-                            BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="16">
-
-                        <Grid>
-
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Grid.Row="0"
-                                        Margin="0,0,0,12"
-                                        Spacing="4">
-
-                                <TextBlock Text="СЕЙЧАС ЗАПУЩЕНО"
-                                           Foreground="#9A9DA5"
-                                           FontWeight="SemiBold"/>
-
-                                <TextBlock x:Name="RunningProcessesCountText"
-                                           Text="0 процессов"
-                                           FontSize="20"
-                                           FontWeight="SemiBold"/>
-
-                            </StackPanel>
-
-                            <ListView x:Name="RunningProcessesList"
-                                      Grid.Row="1"
-                                      SelectionMode="None">
-
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="4,7"
-                                              ColumnSpacing="10">
-
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <StackPanel Spacing="2">
-                                                <TextBlock Text="{Binding Name}"
-                                                           FontWeight="SemiBold"
-                                                           TextTrimming="CharacterEllipsis"/>
-
-                                                <TextBlock Text="{Binding Details}"
-                                                           Foreground="#73777F"
-                                                           FontSize="11"/>
-                                            </StackPanel>
-
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding Memory}"
-                                                       Foreground="#9A9DA5"
-                                                       VerticalAlignment="Center"/>
-
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-
-                            </ListView>
-
-                        </Grid>
-
-                    </Border>
-
-                    <!-- История -->
-                    <Border Grid.Column="1"
-                            Background="#181A1F"
-                            BorderBrush="#2B2E35"
-                            BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="16">
-
-                        <Grid>
-
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0"
-                                  Margin="0,0,0,12">
-
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="ИСТОРИЯ"
-                                           Foreground="#9A9DA5"
-                                           FontWeight="SemiBold"/>
-
-                                <TextBlock x:Name="LogbookCountText"
-                                           Grid.Column="1"
-                                           Text="0 событий"
-                                           Foreground="#73777F"/>
-
-                            </Grid>
-
-                            <ListView x:Name="LogbookList"
-                                      Grid.Row="1"
-                                      SelectionMode="None">
-
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border BorderBrush="#2B2E35"
-                                                BorderThickness="0,0,0,1"
-                                                Padding="2,10">
-
-                                            <StackPanel Spacing="4">
-
-                                                <Grid ColumnSpacing="10">
-
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <TextBlock Text="{Binding Time}"
-                                                               Foreground="#9A9DA5"
-                                                               FontFamily="Consolas"/>
-
-                                                    <TextBlock Grid.Column="1"
-                                                               Text="{Binding Category}"
-                                                               FontWeight="SemiBold"/>
-
-                                                    <TextBlock Grid.Column="2"
-                                                               Text="{Binding Source}"
-                                                               Foreground="#73777F"
-                                                               TextTrimming="CharacterEllipsis"/>
-
-                                                </Grid>
-
-                                                <TextBlock Text="{Binding Title}"
-                                                           FontSize="16"
-                                                           FontWeight="SemiBold"
-                                                           TextWrapping="Wrap"/>
-
-                                                <TextBlock Text="{Binding Details}"
-                                                           Foreground="#9A9DA5"
-                                                           FontSize="12"
-                                                           TextWrapping="Wrap"/>
-
-                                                <TextBlock Text="{Binding FilePath}"
-                                                           Foreground="#73777F"
-                                                           FontSize="11"
-                                                           FontFamily="Consolas"
-                                                           TextWrapping="Wrap"/>
-
-                                            </StackPanel>
-
-                                        </Border>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-
-                            </ListView>
-
-                        </Grid>
-
-                    </Border>
-
+                <Grid x:Name="ProcessManagerPanel" Grid.Row="1" Grid.RowSpan="2" Visibility="Collapsed"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <StackPanel Spacing="12" Margin="0,0,0,16"><TextBlock x:Name="RunningProcessesCountText" Text="0 процессов"/><TextBox x:Name="ProcessSearchBox" PlaceholderText="Поиск по имени или PID" TextChanged="ProcessFilterChanged"/><StackPanel Orientation="Horizontal" Spacing="10"><ComboBox x:Name="ProcessSortComboBox" SelectedIndex="0" SelectionChanged="ProcessSortChanged"><ComboBoxItem Content="Память ↓"/><ComboBoxItem Content="CPU ↓"/><ComboBoxItem Content="Имя"/><ComboBoxItem Content="PID"/></ComboBox><Button Content="Завершить задачу" Click="EndSelectedProcessButton_Click"/><Button Content="Расположение" Click="OpenSelectedProcessLocationButton_Click"/></StackPanel></StackPanel>
+                    <Grid Grid.Row="1" ColumnSpacing="12" Margin="40,0,16,10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="75"/><ColumnDefinition Width="90"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions><TextBlock Text="Имя"/><TextBlock Grid.Column="1" Text="Состояние"/><TextBlock Grid.Column="2" Text="CPU"/><TextBlock Grid.Column="3" Text="RAM"/></Grid>
+                    <ListView x:Name="RunningProcessesList" Grid.Row="2" SelectionMode="None" HorizontalContentAlignment="Stretch"><ListView.ItemTemplate><DataTemplate>
+                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,4">
+                            <Expander.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions>
+                                <Grid><FontIcon Glyph="&#xE7C4;" FontSize="20" Visibility="{Binding FallbackIconVisibility}"/><Image Source="{Binding Icon}" Width="24" Height="24"/></Grid>
+                                <StackPanel Grid.Column="1"><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding Kind}" Foreground="#91A1B8" FontSize="11"/></StackPanel>
+                                <TextBlock Grid.Column="2" Text="{Binding State}" FontSize="12"/><Border Grid.Column="3" Background="#16304F" Padding="8,6"><TextBlock Text="{Binding Cpu}"/></Border><Border Grid.Column="4" Background="#16304F" Padding="8,6"><TextBlock Text="{Binding Memory}"/></Border>
+                            </Grid></Expander.Header>
+                            <ItemsControl ItemsSource="{Binding Children}"><ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="0,6" Spacing="8"><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="{Binding Name}"/><TextBlock Text="{Binding ProcessId}" FontSize="12" Foreground="#91A1B8"/></StackPanel><TextBlock Grid.Column="1" Text="{Binding Cpu}"/><TextBlock Grid.Column="2" Text="{Binding Memory}"/></Grid><StackPanel Orientation="Horizontal" Spacing="8"><Button Content="Выбрать" Tag="{Binding}" Click="SelectManagedProcessButton_Click"/><Button Content="Завершить" Tag="{Binding}" Click="EndManagedProcessButton_Click"/><Button Content="Расположение" Tag="{Binding}" Click="OpenManagedProcessLocationButton_Click"/></StackPanel></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                        </Expander>
+                    </DataTemplate></ListView.ItemTemplate></ListView>
+                    <TextBlock x:Name="ProcessActionStatusText" Grid.Row="3" Text="CPU вычисляется между обновлениями. Завершение защищённых и системных процессов недоступно." TextWrapping="Wrap" Foreground="#A7B5C8" Margin="0,12,0,0"/>
                 </Grid>
-
             </Grid>
 
         </Grid>

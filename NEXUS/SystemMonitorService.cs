@@ -13,8 +13,9 @@ namespace NEXUS
     {
         private readonly LogService _logService;
 
-        private readonly Dictionary<int, string>
-            _knownProcesses = new();
+        private sealed record KnownProcess(string Name, string Path, DateTime StartedUtc);
+        private readonly Dictionary<int, KnownProcess> _knownProcesses = new();
+        private readonly object _processGate = new();
 
         private readonly List<FileSystemWatcher>
             _fileWatchers = new();
@@ -92,7 +93,7 @@ namespace NEXUS
                 {
                     _knownProcesses[
                         process.Id] =
-                        process.ProcessName;
+                        ReadKnownProcess(process);
                 }
                 catch
                 {
@@ -104,15 +105,24 @@ namespace NEXUS
             }
         }
 
+        private static KnownProcess ReadKnownProcess(Process process)
+        {
+            DateTime started = default;
+            try { started = process.StartTime.ToUniversalTime(); } catch { }
+            return new(process.ProcessName, Services.ProcessPathReader.Read(process.Id), started);
+        }
+
         private void CheckProcesses(
             object? state)
         {
+            lock (_processGate)
+            {
             try
             {
                 Process[] processes =
                     Process.GetProcesses();
 
-                Dictionary<int, string> current =
+                Dictionary<int, KnownProcess> current =
                     new();
 
                 foreach (Process process
@@ -122,7 +132,7 @@ namespace NEXUS
                     {
                         current[
                             process.Id] =
-                            process.ProcessName;
+                            ReadKnownProcess(process);
                     }
                     catch
                     {
@@ -137,8 +147,7 @@ namespace NEXUS
                 foreach (var process
                          in current)
                 {
-                    if (_knownProcesses.ContainsKey(
-                        process.Key))
+                    if (_knownProcesses.TryGetValue(process.Key, out var previous) && previous.StartedUtc == process.Value.StartedUtc)
                     {
                         continue;
                     }
@@ -146,18 +155,17 @@ namespace NEXUS
                     _logService.Write(
                         "Process",
                         "Started",
-                        process.Value,
-                        $"Запущен процесс {process.Value}",
-                        $"PID: {process.Key}",
-                        process.Key);
+                        process.Value.Name,
+                        $"Запущен процесс {process.Value.Name}",
+                        "",
+                        process.Key, process.Value.Path);
                 }
 
                 // Завершённые процессы.
                 foreach (var process
                          in _knownProcesses.ToArray())
                 {
-                    if (current.ContainsKey(
-                        process.Key))
+                    if (current.TryGetValue(process.Key, out var active) && active.StartedUtc == process.Value.StartedUtc)
                     {
                         continue;
                     }
@@ -165,10 +173,10 @@ namespace NEXUS
                     _logService.Write(
                         "Process",
                         "Stopped",
-                        process.Value,
-                        $"Процесс {process.Value} завершён",
-                        $"PID: {process.Key}",
-                        process.Key);
+                        process.Value.Name,
+                        $"Процесс {process.Value.Name} завершён",
+                        "",
+                        process.Key, process.Value.Path);
                 }
 
                 _knownProcesses.Clear();
@@ -183,6 +191,7 @@ namespace NEXUS
             }
             catch
             {
+            }
             }
         }
 
@@ -240,6 +249,7 @@ namespace NEXUS
                 _lastWindowProcessId =
                     (int)processId;
 
+                string processPath = "";
                 string processName =
                     "Unknown";
 
@@ -251,6 +261,7 @@ namespace NEXUS
 
                     processName =
                         process.ProcessName;
+                    processPath = Services.ProcessPathReader.Read(process.Id);
                 }
                 catch
                 {
@@ -262,7 +273,7 @@ namespace NEXUS
                     processName,
                     $"Активно: {windowTitle}",
                     $"Process: {processName}",
-                    (int)processId);
+                    (int)processId, processPath);
             }
             catch
             {
