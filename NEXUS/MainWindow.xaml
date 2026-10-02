@@ -51,7 +51,7 @@
                     <Button x:Name="LogbookNavButton" AutomationProperties.Name="Журнал событий" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock x:Name="LogbookNavLabel" Text="Журнал событий"/></StackPanel></Button>
                 </StackPanel></ScrollViewer>
                 <Border x:Name="SidebarFooter" Grid.Row="2" Background="#192435" CornerRadius="12" Padding="14">
-                    <StackPanel Spacing="6"><TextBlock Text="Мониторинг в реальном времени" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="Данные остаются на этом ПК" FontSize="11" Foreground="#A7B5C8"/></StackPanel>
+                    <StackPanel Spacing="6"><TextBlock Text="Мониторинг в реальном времени" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="ИИ: отправка только по кнопке" FontSize="11" Foreground="#A7B5C8"/></StackPanel>
                 </Border>
             </Grid>
         </Border>
