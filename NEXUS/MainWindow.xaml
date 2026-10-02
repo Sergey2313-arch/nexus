@@ -137,6 +137,20 @@
 
                     </StackPanel>
 
+                    <Border Background="#181A1F" BorderBrush="#2B2E35" BorderThickness="1" CornerRadius="10" Padding="24">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Диагностика и безопасность" FontSize="24" FontWeight="SemiBold"/>
+                            <TextBlock Text="Процессы, автозагрузка, службы, Temp, сеть, Defender и настройки защиты" TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button x:Name="ScanSystemButton" Content="ПРОВЕРИТЬ СИСТЕМУ" Click="ScanSystemButton_Click"/>
+                                <Button x:Name="CancelSecurityScanButton" Content="Отмена" IsEnabled="False" Click="CancelSecurityScanButton_Click"/>
+                            </StackPanel>
+                            <ProgressBar x:Name="SecurityScanProgress" IsIndeterminate="False"/>
+                            <TextBlock x:Name="SecurityScanStatusText" Text="Проверка ещё не запускалась" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="SecurityResultsText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                        </StackPanel>
+                    </Border>
+
                     <!-- ========================= -->
                     <!--         УСТРОЙСТВО         -->
                     <!-- ========================= -->
@@ -700,6 +714,7 @@
                             <ComboBoxItem Content="Файлы"/>
                             <ComboBoxItem Content="Буфер обмена"/>
                             <ComboBoxItem Content="Система"/>
+                            <ComboBoxItem Content="Безопасность"/>
                         </ComboBox>
 
                         <TextBox x:Name="LogbookSearchBox"

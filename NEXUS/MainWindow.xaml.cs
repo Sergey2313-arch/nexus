@@ -126,6 +126,8 @@ namespace NEXUS
         object sender,
         WindowEventArgs args)
         {
+            _securityWindowClosed = true;
+            _securityScanCancellation?.Cancel();
             _monitorTimer.Stop();
             _logbookTimer.Stop();
 
@@ -316,6 +318,7 @@ namespace NEXUS
                         3 => "File",
                         4 => "Clipboard",
                         5 => "System",
+                        6 => "Security",
                         _ => null
                     };
 
@@ -430,6 +433,7 @@ namespace NEXUS
                 "Clipboard" => "БУФЕР",
                 "System" => "СИСТЕМА",
                 "Hardware" => "ЖЕЛЕЗО",
+                "Security" => "БЕЗОПАСНОСТЬ",
                 _ => category.ToUpperInvariant()
             };
         }
