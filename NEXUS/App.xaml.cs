@@ -42,6 +42,7 @@ namespace NEXUS
             // когда весь динамический visual tree уже построен.
             mainWindow.InitializeModernInterface();
             mainWindow.InitializeVisualPolish();
+            mainWindow.InitializeDashboardOverview();
 
             _window = mainWindow;
             _window.Activate();
