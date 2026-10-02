@@ -17,6 +17,8 @@ Check(NEXUS.Services.SensorReadingPolicy.IsGpuCoreTemperature("GPU Core"), "GPU 
 var guideFixture = FindingResolver.Resolve(new("Warning", "Integrity", "Test", "", ""));
 Check(guideFixture.Steps.IndexOf("DISM", StringComparison.Ordinal) < guideFixture.Steps.IndexOf("SFC", StringComparison.Ordinal), "Repair guide must put DISM before SFC");
 Check(guideFixture.Verification.Contains("Снова"), "Repair guide must require verification");
+var integrityInfo = FindingResolver.Resolve(new("Info", "Integrity", "SFC output", "", "Review output"));
+Check(integrityInfo.Id == "manual" && integrityInfo.Explanation.Contains("не подтверждение"), "Informational integrity output must not diagnose corruption or offer automatic repair");
 var fileGuide = FindingResolver.Resolve(new("Warning", "Files", "Test", "", ""));
 Check(fileGuide.Explanation.Contains("не гарантирует"), "Quick scan must not claim targeted file coverage");
 if (OperatingSystem.IsWindows())

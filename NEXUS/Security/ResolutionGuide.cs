@@ -6,6 +6,13 @@ public static class ResolutionGuide
 {
     public static FindingResolution Enrich(SecurityFinding finding, FindingResolution action)
     {
+        if (finding.Category == "Integrity" && finding.Severity == "Info")
+            return action with
+            {
+                Explanation = "Это вывод диагностической команды, а не подтверждение повреждения. Оцените текст результата SFC/DISM в основании находки.",
+                Steps = "1. Раскройте основание проверки и прочитайте результат команды.\n2. Если повреждений нет, восстановление не требуется.\n3. Если команда сообщает о повреждении, используйте DISM /RestoreHealth, затем SFC /scannow в задачах помощника.\n4. Если команда не смогла выполнить проверку, сначала устраните причину отказа: права, доступ или ошибку команды.",
+                Verification = "После восстановления повторите диагностику с правами администратора и сравните текст вывода. Информационная запись об успешной проверке останется в отчёте."
+            };
         var guide = action.Id switch
         {
             "thermal" => (

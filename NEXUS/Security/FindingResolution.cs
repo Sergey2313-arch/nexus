@@ -20,6 +20,7 @@ public static class FindingResolver
             if (title.Contains("места")) return new("temp", "Освободить место", "Анализ временных файлов, затем подтверждение удаления.");
             if (title.Contains("памяти")) return new("ram", "Управлять приложениями", "Выбор приложения и освобождение рабочего набора; причина высокого расхода RAM может потребовать отдельного решения.");
         }
+        if (finding.Category == "Integrity" && finding.Severity == "Info") return new("manual", "Разобрать результат проверки", finding.Recommendation);
         if (finding.Category == "Integrity") return new("dism", "Восстановление DISM / SFC", "Восстановление с подтверждением, затем повторная проверка целостности.");
         if (finding.Category == "Defender")
         {
