@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace NEXUS.Security;
 
-public sealed record HardwareReading(string Device, string Metric, double Value);
+public sealed record HardwareReading(string Device, string Metric, double Value, string Source = "");
 public sealed record HealthAssessment(int? HardwareScore, bool HardwareComplete, int SecurityScore, bool SecurityComplete, int? OverallScore, IReadOnlyList<SecurityFinding> Findings);
 
 public static class HealthAnalyzer

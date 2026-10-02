@@ -140,13 +140,13 @@ public sealed partial class MainWindow
         SecurityScanProgress.Value = 8;
         ScanCoverageText.Text = $"Выполнено этапов: {result.Stages.Count(s => s.Completed)}/8. Критических находок: {_displayFindings.Count(f => f.Severity == "Critical")}. Предупреждений: {_displayFindings.Count(f => f.Severity == "Warning")}.";
         ScanStagesList.ItemsSource = result.Stages.Select(s => new StageCard { Name = s.Name, Details = s.Details, Symbol = s.Completed ? "✓" : "!", Accent = s.Completed ? Brush(0x69, 0xD4, 0xD0) : Brush(0xFF, 0xC8, 0x57) }).ToList();
-        DiagnosticReadingsList.ItemsSource = readings.Count == 0 ? new[] { "Датчики недоступны" } : readings.Select(r => $"{r.Device} • {MetricName(r.Metric)}: {r.Value:F1}{(r.Metric.Contains("Temperature") ? " °C" : " %")}").ToArray();
+        DiagnosticReadingsList.ItemsSource = readings.Count == 0 ? new[] { "Датчики недоступны" } : readings.Select(r => $"{r.Device} • {MetricName(r.Metric)}: {r.Value:F1}{(r.Metric.Contains("Temperature") ? " °C" : " %")}{(string.IsNullOrEmpty(r.Source) ? "" : " • " + r.Source)}").ToArray();
         RefreshFindingCards();
     }
 
     private static string MetricName(string metric) => metric switch
     {
-        "CPU Temperature" => "Температура CPU", "GPU Temperature" => "Температура GPU", "Storage Temperature" => "Температура накопителя", "Storage Health" => "Остаточный ресурс", "Disk Used" => "Занято места", "RAM Load" => "Загрузка RAM", _ => metric
+        "CPU Temperature" => "Температура CPU", "GPU Temperature" => "Температура ядра GPU", "GPU Auxiliary Temperature" => "Дополнительная температура GPU", "Storage Temperature" => "Температура накопителя", "Storage Health" => "Остаточный ресурс", "Disk Used" => "Занято места", "RAM Load" => "Загрузка RAM", _ => metric
     };
 
     private void FindingsFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -8,6 +8,12 @@ static void Check(bool condition, string message)
 {
     if (!condition) throw new Exception(message);
 }
+Check(NEXUS.Services.SensorReadingPolicy.CurrentValue("Temperature", 0) == null, "Zero laptop temperature must be unavailable");
+Check(NEXUS.Services.SensorReadingPolicy.CurrentValue("Clock", 0) == null, "Zero clock must not claim a measured frequency");
+Check(NEXUS.Services.SensorReadingPolicy.CurrentValue("Load", 0) == 0, "Idle load remains a valid zero");
+Check(NEXUS.Services.SensorReadingPolicy.CurrentValue("Temperature", 54) == 54, "Available temperature must be preserved");
+Check(!NEXUS.Services.SensorReadingPolicy.IsGpuCoreTemperature("GPU VR SoC"), "VR SoC must not be used as GPU core temperature");
+Check(NEXUS.Services.SensorReadingPolicy.IsGpuCoreTemperature("GPU Core"), "GPU core temperature must be recognized");
 var result = new DiagnosticResult();
 Check(!result.IsComplete, "Empty scan must not claim completion");
 for (int i = 0; i < 8; i++) result.Stages.Add(new("Stage", true, ""));

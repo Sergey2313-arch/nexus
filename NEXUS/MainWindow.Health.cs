@@ -1,6 +1,7 @@
 using LibreHardwareMonitor.Hardware;
 using Microsoft.UI.Xaml;
 using NEXUS.Security;
+using NEXUS.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,8 +33,14 @@ public sealed partial class MainWindow
     {
         bool gpu = hardware.HardwareType == HardwareType.GpuAmd || hardware.HardwareType == HardwareType.GpuNvidia || hardware.HardwareType == HardwareType.GpuIntel;
         string? metric = hardware.HardwareType == HardwareType.Cpu ? "CPU Temperature" : gpu ? "GPU Temperature" : hardware.HardwareType == HardwareType.Storage ? "Storage Temperature" : null;
-        var temperatures = hardware.Sensors.Where(s => s.SensorType == SensorType.Temperature && s.Value.HasValue && s.Value.Value > 1).Select(s => (double)s.Value!.Value).ToList();
-        if (metric != null && temperatures.Count > 0) readings.Add(new(hardware.Name, metric, temperatures.Max()));
+        var temperatures = hardware.Sensors.Where(s => s.SensorType == SensorType.Temperature && SensorReadingPolicy.CurrentValue("Temperature", s.Value).HasValue).ToList();
+        var primary = temperatures.Where(s => !gpu || SensorReadingPolicy.IsGpuCoreTemperature(s.Name)).OrderByDescending(s => s.Value).FirstOrDefault();
+        if (metric != null && primary != null) readings.Add(new(hardware.Name, metric, primary.Value!.Value, primary.Name));
+        if (gpu)
+        {
+            var auxiliary = temperatures.Where(s => !SensorReadingPolicy.IsGpuCoreTemperature(s.Name)).OrderByDescending(s => s.Value).FirstOrDefault();
+            if (auxiliary != null) readings.Add(new(hardware.Name, "GPU Auxiliary Temperature", auxiliary.Value!.Value, auxiliary.Name));
+        }
         if (hardware.HardwareType == HardwareType.Storage)
         {
             var health = hardware.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Level && s.Name.Contains("remaining", StringComparison.OrdinalIgnoreCase) && s.Value.HasValue);

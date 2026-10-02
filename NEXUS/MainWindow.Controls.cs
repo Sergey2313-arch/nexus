@@ -117,7 +117,7 @@ public sealed partial class MainWindow
                 row = new() { Device = hardware.Name, Name = sensor.Name, Kind = sensor.SensorType.ToString(), Unit = SensorUnit(sensor.SensorType) };
                 _sensorRows.Add(key, row);
             }
-            row.Update(sensor.Value);
+            row.Update(SensorReadingPolicy.CurrentValue(sensor.SensorType.ToString(), sensor.Value));
         }
         foreach (var child in hardware.SubHardware) CollectSensors(child, seen);
     }
@@ -134,15 +134,19 @@ public sealed partial class MainWindow
         double? cpu = Highest("CPU Temperature"), gpu = Highest("GPU Temperature"), storage = Highest("Storage Temperature"), ram = Highest("RAM Load");
         string Temp(double? value) => value.HasValue ? $"{value:F1} °C" : "Датчик недоступен";
         DiagramCpuText.Text = ThermalCpuText.Text = Temp(cpu);
-        DiagramGpuText.Text = ThermalGpuText.Text = Temp(gpu);
+        var gpuSource = readings.Where(r => r.Metric == "GPU Temperature").OrderByDescending(r => r.Value).FirstOrDefault();
+        var gpuAuxiliary = readings.Where(r => r.Metric == "GPU Auxiliary Temperature").OrderByDescending(r => r.Value).FirstOrDefault();
+        string gpuText = gpuSource != null ? Temp(gpu) + " • " + gpuSource.Source : gpuAuxiliary != null ? $"{gpuAuxiliary.Value:F1} °C • {gpuAuxiliary.Source} (не ядро GPU)" : "Датчик ядра GPU недоступен";
+        DiagramGpuText.Text = ThermalGpuText.Text = gpuText;
+        GpuTempText.Text = gpuText;
         DiagramStorageText.Text = ThermalStorageText.Text = Temp(storage);
         DiagramRamText.Text = ram.HasValue ? $"{ram:F0} %" : "Нет данных";
         MaintenanceRamText.Text = RamDetailsText.Text;
         PlotTemperature(_cpuHistory, cpu, CpuTemperatureLine);
-        PlotTemperature(_gpuHistory, gpu, GpuTemperatureLine);
+        PlotTemperature(_gpuHistory, gpu ?? gpuAuxiliary?.Value, GpuTemperatureLine);
         PlotTemperature(_storageHistory, storage, StorageTemperatureLine);
         bool hot = (cpu >= 80) || (gpu >= 85) || (storage >= 60);
-        ThermalStatusText.Text = hot ? "Повышенная температура: проверьте нагрузку, вентиляцию и охлаждение." : "Показания доступны только для обнаруженных датчиков. Для каждого типа отображается максимальная температура.";
+        ThermalStatusText.Text = hot ? "Повышенная температура: проверьте нагрузку, вентиляцию и охлаждение." : "Показания доступны только для обнаруженных датчиков. Показан источник температуры. GPU VR/SoC не заменяет датчик ядра GPU.";
         ThermalStatusText.Foreground = hot ? Brush(0xFF,0xC8,0x57) : Brush(0xA7,0xB5,0xC8);
     }
     private static void PlotTemperature(Queue<double> history, double? value, Microsoft.UI.Xaml.Shapes.Polyline line)

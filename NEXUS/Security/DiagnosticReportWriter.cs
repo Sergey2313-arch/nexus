@@ -21,7 +21,7 @@ public static class DiagnosticReportWriter
         html.Append("<p>Баллы — индикаторы обнаруженных признаков, не гарантия исправности или отсутствия угроз. Температуры отражают один снимок. Недоступные датчики и объекты не считаются исправными.</p><h2>Покрытие</h2>");
         foreach (var stage in result.Stages) html.Append($"<article><b>{E(stage.Name)} — {(stage.Completed ? "выполнено" : "недоступно/частично")}</b><pre>{E(stage.Details)}</pre></article>");
         html.Append("<h2>Показания железа</h2>");
-        foreach (var r in readings) html.Append($"<p>{E(r.Device)} • {E(r.Metric)}: {r.Value:F1}</p>");
+        foreach (var r in readings) html.Append($"<p>{E(r.Device)} • {E(r.Metric)}: {r.Value:F1}{(r.Metric.Contains("Temperature") ? " °C" : " %")} • {E(r.Source)}</p>");
         html.Append("<h2>Находки и рекомендации</h2>");
         foreach (var f in System.Linq.Enumerable.Concat(result.Findings, health.Findings)) html.Append($"<article class='{E(f.Severity)}'><b>[{E(f.Severity)}] {E(f.Title)}</b><pre>{E(f.Evidence)}</pre><p>{E(f.Recommendation)}</p></article>");
         html.Append("</html>");
