@@ -154,13 +154,50 @@ Check(FindingResolver.Resolve(new("Warning","Hardware","Снижен ресур�
 Check(FindingResolver.Resolve(new("Warning","Files","Неподписанный файл","","" )).Id == "defender-scan", "Unsigned files must get verification, not deletion");
 Check(FindingResolver.Resolve(new("Warning","Defender","Базы Defender устарели","","" )).Id == "defender-update", "Outdated definitions need the update action");
 
+Check(NEXUS.Services.AiAssistantService.ModelsEndpoint("https://example.com/custom/v1/chat/completions").AbsoluteUri == "https://example.com/custom/v1/models", "Models endpoint must retain custom API prefix");
+using (var mock = new AiFixtureHandler())
+using (var assistant = new NEXUS.Services.AiAssistantService(mock))
+{
+    var models = await assistant.ListModelsAsync("https://example.com/v1/chat/completions", "fixture-key", CancellationToken.None);
+    Check(models.Count == 2 && models[0] == "model-a" && models[1] == "model-b", "Model list must parse, sort and deduplicate IDs");
+    Check(mock.Method == System.Net.Http.HttpMethod.Get && mock.Payload == "" && mock.Authorization == "Bearer fixture-key", "Model discovery must send GET with no chat payload");
+    mock.Status = System.Net.HttpStatusCode.Unauthorized; mock.ResponseBody = "fixture-key secret server error";
+    try { await assistant.ListModelsAsync("https://example.com/v1/chat/completions", "fixture-key", CancellationToken.None); throw new Exception("Expected failed authorization"); }
+    catch (InvalidOperationException ex) { Check(ex.Message.Contains("401") && !ex.Message.Contains("fixture-key"), "Failure must preserve HTTP status without exposing raw server error"); }
+    mock.Status = System.Net.HttpStatusCode.OK; mock.ResponseBody = "{\"data\":{}}";
+    try { await assistant.ListModelsAsync("https://example.com/v1/chat/completions", "", CancellationToken.None); throw new Exception("Expected invalid list rejection"); }
+    catch (InvalidOperationException) { }
+    mock.ResponseBody = new string('x', 1048577);
+    try { await assistant.ListModelsAsync("https://example.com/v1/chat/completions", "", CancellationToken.None); throw new Exception("Expected size limit rejection"); }
+    catch (InvalidOperationException ex) { Check(ex.Message.Contains("слишком большой"), "Oversized model response should be rejected before parsing"); }
+}
+var settingsFolder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "NexusAiSettings-" + Guid.NewGuid().ToString("N"));
+var settingsPath = System.IO.Path.Combine(settingsFolder, "settings.json");
+try
+{
+    NEXUS.Services.AiConnectionSettingsStore.Save(new("http://localhost:11434/v1/chat/completions", "model-a"), settingsPath);
+    var saved = NEXUS.Services.AiConnectionSettingsStore.Load(settingsPath);
+    Check(saved?.Model == "model-a", "AI connection settings must round-trip");
+    using var json = JsonDocument.Parse(System.IO.File.ReadAllText(settingsPath));
+    Check(System.Linq.Enumerable.Count(json.RootElement.EnumerateObject()) == 2 && json.RootElement.TryGetProperty("Endpoint", out _) && json.RootElement.TryGetProperty("Model", out _), "Saved settings must contain only endpoint and model, no key or chat");
+    try { NEXUS.Services.AiConnectionSettingsStore.Save(new("https://example.com/v1/chat/completions?key=secret", "model-a"), settingsPath); throw new Exception("Expected secret-bearing URL rejection"); }
+    catch (ArgumentException) { }
+    Check(NEXUS.Services.AiConnectionSettingsStore.Load(settingsPath)?.Endpoint.StartsWith("http://localhost") == true, "Failed validation must preserve existing saved settings");
+}
+finally { if (System.IO.Directory.Exists(settingsFolder)) System.IO.Directory.Delete(settingsFolder, true); }
+Console.WriteLine("AI model discovery, errors, response bounds and private settings checks passed.");
+
 sealed class AiFixtureHandler : System.Net.Http.HttpMessageHandler
 {
     public string Payload = "", Authorization = "";
+    public System.Net.Http.HttpMethod? Method;
+    public System.Net.HttpStatusCode Status = System.Net.HttpStatusCode.OK;
+    public string? ResponseBody;
     protected override async Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken token)
     {
-        Payload = await request.Content!.ReadAsStringAsync(token);
+        Method = request.Method;
+        Payload = request.Content == null ? "" : await request.Content.ReadAsStringAsync(token);
         Authorization = request.Headers.Authorization?.ToString() ?? "";
-        return new(System.Net.HttpStatusCode.OK) { Content = new System.Net.Http.StringContent("{\"choices\":[{\"message\":{\"content\":\"Проверьте нагрузку\"}}]}") };
+        return new(Status) { Content = new System.Net.Http.StringContent(ResponseBody ?? (request.Method == System.Net.Http.HttpMethod.Get ? "{\"data\":[{\"id\":\"model-b\"},{\"id\":\"model-a\"},{\"id\":\"model-a\"},{\"id\":null}]}" : "{\"choices\":[{\"message\":{\"content\":\"Проверьте нагрузку\"}}]}")) };
     }
 }

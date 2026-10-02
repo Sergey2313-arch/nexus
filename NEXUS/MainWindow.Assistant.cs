@@ -14,11 +14,13 @@ public sealed partial class MainWindow
     private readonly List<ChatTurn> _aiHistory = new();
     private CancellationTokenSource? _aiRequestCancellation;
     private bool _repairRunning;
+    private bool _aiSettingsLoaded;
     public sealed record AssistantTaskItem(string Id, string Title, string Details, string ButtonText);
 
     private void AiButton_Click(object sender, RoutedEventArgs e)
     {
         NavigateTo("ai");
+        LoadAiConnectionSettings();
         AssistantTasksList.ItemsSource = new[]
         {
             new AssistantTaskItem("scan", "Проверить причины проблем", "Диагностика процессов, автозагрузки, защиты, целостности и железа. Недоступные этапы отмечаются отдельно.", "Запустить диагностику"),
@@ -48,7 +50,7 @@ public sealed partial class MainWindow
         if (question.Length == 0) { AiStatusText.Text = "Напишите вопрос."; return; }
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_controlsLifetime.Token);
         _aiRequestCancellation = cancellation;
-        AiSendButton.IsEnabled = AiClearButton.IsEnabled = false; AiCancelButton.IsEnabled = true;
+        SetAiRequestBusy(true);
         AiStatusText.Text = "Ожидаем ответ модели…";
         try
         {
@@ -66,7 +68,7 @@ public sealed partial class MainWindow
         finally
         {
             _aiRequestCancellation = null;
-            if (!_securityWindowClosed) { AiSendButton.IsEnabled = AiClearButton.IsEnabled = true; AiCancelButton.IsEnabled = false; }
+            if (!_securityWindowClosed) SetAiRequestBusy(false);
         }
     }
     private void AiCancelButton_Click(object sender, RoutedEventArgs e) => _aiRequestCancellation?.Cancel();

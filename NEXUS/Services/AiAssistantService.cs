@@ -42,6 +42,43 @@ public sealed class AiAssistantService : IDisposable
         request.Content = new StringContent(JsonSerializer.Serialize(new { model = model.Trim(), messages, stream = false }), Encoding.UTF8, "application/json");
         using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (!response.IsSuccessStatusCode) throw new InvalidOperationException($"API вернул HTTP {(int)response.StatusCode}. Проверьте URL, модель, ключ и доступ; текст ответа сервера не записывается в журнал.");
+        using var json = await ReadJsonAsync(response, cancellationToken);
+        if (!json.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0 || !choices[0].TryGetProperty("message", out var message) || !message.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(content.GetString()))
+            throw new InvalidOperationException("Модель не вернула текст ответа в формате chat/completions.");
+        return content.GetString()!;
+    }
+    public static Uri ModelsEndpoint(string endpoint)
+    {
+        var uri = ValidateEndpoint(endpoint);
+        const string suffix = "/chat/completions";
+        if (!uri.AbsolutePath.EndsWith(suffix, StringComparison.Ordinal)) throw new ArgumentException("Для списка моделей URL должен заканчиваться на /chat/completions. Если API не поддерживает список, введите модель вручную.");
+        var builder = new UriBuilder(uri) { Path = uri.AbsolutePath[..^suffix.Length] + "/models" };
+        return builder.Uri;
+    }
+    public async Task<IReadOnlyList<string>> ListModelsAsync(string endpoint, string key, CancellationToken cancellationToken)
+    {
+        if (System.Linq.Enumerable.Any(key, char.IsControl)) throw new ArgumentException("API-ключ содержит недопустимые символы.");
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        lifetime.CancelAfter(TimeSpan.FromSeconds(15));
+        using var request = new HttpRequestMessage(HttpMethod.Get, ModelsEndpoint(endpoint));
+        if (!string.IsNullOrWhiteSpace(key)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key.Trim());
+        using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, lifetime.Token);
+        if (!response.IsSuccessStatusCode) throw new InvalidOperationException($"Список моделей: HTTP {(int)response.StatusCode}. Проверьте адрес и ключ. Если /models не поддерживается, введите имя модели вручную.");
+        using var json = await ReadJsonAsync(response, lifetime.Token);
+        if (!json.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array) throw new InvalidOperationException("API не вернул список data[].id. Введите имя модели вручную.");
+        var models = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var item in data.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object || !item.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String) continue;
+            string name = id.GetString() ?? "";
+            if (name.Length == 0 || name.Length > 256 || System.Linq.Enumerable.Any(name, char.IsControl)) continue;
+            models.Add(name);
+            if (models.Count >= 200) break;
+        }
+        return new List<string>(models);
+    }
+    private static async Task<JsonDocument> ReadJsonAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
         if (response.Content.Headers.ContentLength > 1048576) throw new InvalidOperationException("Ответ API слишком большой.");
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var buffer = new System.IO.MemoryStream();
@@ -51,10 +88,7 @@ public sealed class AiAssistantService : IDisposable
             if (buffer.Length + read > 1048576) throw new InvalidOperationException("Ответ API слишком большой.");
             buffer.Write(block, 0, read);
         }
-        using var json = JsonDocument.Parse(buffer.ToArray());
-        if (!json.RootElement.TryGetProperty("choices", out var choices) || choices.GetArrayLength() == 0 || !choices[0].TryGetProperty("message", out var message) || !message.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(content.GetString()))
-            throw new InvalidOperationException("Модель не вернула текст ответа в формате chat/completions.");
-        return content.GetString()!;
+        return JsonDocument.Parse(buffer.ToArray());
     }
     public void Dispose() => _http.Dispose();
 }
