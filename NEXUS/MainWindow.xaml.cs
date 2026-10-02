@@ -34,6 +34,7 @@ namespace NEXUS
         public MainWindow()
         {
             InitializeComponent();
+            InitializeDiagnosticsView();
 
             _logService =
             new LogService();
@@ -168,26 +169,14 @@ namespace NEXUS
             object sender,
             RoutedEventArgs e)
         {
-            _isLogbookVisible = false;
-
-            DashboardView.Visibility =
-                Visibility.Visible;
-
-            LogbookView.Visibility =
-                Visibility.Collapsed;
+            NavigateTo("overview");
         }
 
         private void LogbookButton_Click(
             object sender,
             RoutedEventArgs e)
         {
-            _isLogbookVisible = true;
-
-            DashboardView.Visibility =
-                Visibility.Collapsed;
-
-            LogbookView.Visibility =
-                Visibility.Visible;
+            NavigateTo("logbook");
 
             RefreshLogbook();
         }

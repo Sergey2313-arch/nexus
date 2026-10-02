@@ -21,18 +21,20 @@ public sealed partial class MainWindow
         _diagnosticReportPath = null;
         CancelSecurityScanButton.IsEnabled = true;
         SecurityResultsText.Text = "";
-        SecurityScanProgress.IsIndeterminate = true;
+        ResetDiagnosticCards();
+        SecurityScanProgress.IsIndeterminate = false;
         try
         {
             var readings = CaptureHardwareReadings();
             var progress = new Progress<string>(stage =>
             {
-                if (!_securityWindowClosed) SecurityScanStatusText.Text = stage;
+                if (!_securityWindowClosed) UpdateScanStage(stage);
             });
             var result = await new SecurityScannerService().ScanAsync(progress, cancellation.Token);
             if (_securityWindowClosed) return;
             var health = HealthAnalyzer.Analyze(result, readings);
             string hardwareSummary = $"Health Score: {health.OverallScore?.ToString() ?? "недостаточно данных"} • Железо: {health.HardwareScore?.ToString() ?? "нет данных"}/100 ({(health.HardwareComplete ? "ключевые датчики" : "частичные данные")}) • Безопасность: {health.SecurityScore}/100\n";
+            ShowDiagnosticCards(result, health, readings);
             var allFindings = result.Findings.Concat(health.Findings).ToList();
             SecurityScanStatusText.Text = $"{(result.IsComplete ? "Проверка завершена" : "Проверка частичная")} • {result.Timestamp:HH:mm:ss}";
             SecurityResultsText.Text = hardwareSummary + $"Индикатор риска конфигурации: {result.RiskScore}/100\n" +
@@ -56,11 +58,11 @@ public sealed partial class MainWindow
         }
         catch (OperationCanceledException)
         {
-            if (!_securityWindowClosed) SecurityScanStatusText.Text = "Проверка отменена. Результат не сформирован.";
+            if (!_securityWindowClosed) { SecurityScanStatusText.Text = "Проверка отменена"; StopDiagnosticCards("Проверка отменена"); }
         }
         catch (Exception ex)
         {
-            if (!_securityWindowClosed) SecurityScanStatusText.Text = "Ошибка проверки: " + ex.Message;
+            if (!_securityWindowClosed) { SecurityScanStatusText.Text = "Ошибка проверки: " + ex.Message; StopDiagnosticCards("Ошибка проверки"); }
         }
         finally
         {
