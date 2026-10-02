@@ -76,7 +76,6 @@ namespace NEXUS
 
             AddSeparateSecurityNavigation(root);
             AttachPageNavigation(root);
-            MoveCompromiseCardToSecurity();
             UpdateVersionTo010(root);
 
             LoadPlanner();
@@ -752,27 +751,6 @@ namespace NEXUS
             };
             shell.Body.Children.Add(intro);
             return shell.Page;
-        }
-
-        private void MoveCompromiseCardToSecurity()
-        {
-            if (_compromiseCard == null || _securityDepartmentBody == null) return;
-
-            if (_diagnosticsView != null)
-            {
-                foreach (StackPanel panel in FindDescendants<StackPanel>(_diagnosticsView).ToList())
-                {
-                    int index = panel.Children.IndexOf(_compromiseCard);
-                    if (index >= 0)
-                    {
-                        panel.Children.RemoveAt(index);
-                        break;
-                    }
-                }
-            }
-
-            if (_securityDepartmentBody.Children.IndexOf(_compromiseCard) < 0)
-                _securityDepartmentBody.Children.Add(_compromiseCard);
         }
 
         private static (Grid Page, StackPanel Body) CreatePageShell(string title, string subtitle)
