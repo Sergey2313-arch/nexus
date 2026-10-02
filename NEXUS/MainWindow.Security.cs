@@ -30,7 +30,10 @@ public sealed partial class MainWindow
             {
                 if (!_securityWindowClosed) UpdateScanStage(stage);
             });
-            var result = await new SecurityScannerService().ScanAsync(progress, cancellation.Token);
+            var result = await new SecurityScannerService().ScanAsync(progress, cancellation.Token, new Progress<ScanStage>(stage =>
+            {
+                if (!_securityWindowClosed) { _completedScanStages[stage.Name] = stage; RenderScanStages(); }
+            }));
             if (_securityWindowClosed) return;
             var health = HealthAnalyzer.Analyze(result, readings);
             string hardwareSummary = $"Health Score: {health.OverallScore?.ToString() ?? "недостаточно данных"} • Железо: {health.HardwareScore?.ToString() ?? "нет данных"}/100 ({(health.HardwareComplete ? "ключевые датчики" : "частичные данные")}) • Безопасность: {health.SecurityScore}/100\n";

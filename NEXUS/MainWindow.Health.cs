@@ -32,7 +32,7 @@ public sealed partial class MainWindow
     {
         bool gpu = hardware.HardwareType == HardwareType.GpuAmd || hardware.HardwareType == HardwareType.GpuNvidia || hardware.HardwareType == HardwareType.GpuIntel;
         string? metric = hardware.HardwareType == HardwareType.Cpu ? "CPU Temperature" : gpu ? "GPU Temperature" : hardware.HardwareType == HardwareType.Storage ? "Storage Temperature" : null;
-        var temperatures = hardware.Sensors.Where(s => s.SensorType == SensorType.Temperature && s.Value.HasValue).Select(s => (double)s.Value!.Value).ToList();
+        var temperatures = hardware.Sensors.Where(s => s.SensorType == SensorType.Temperature && s.Value.HasValue && s.Value.Value > 1).Select(s => (double)s.Value!.Value).ToList();
         if (metric != null && temperatures.Count > 0) readings.Add(new(hardware.Name, metric, temperatures.Max()));
         if (hardware.HardwareType == HardwareType.Storage)
         {

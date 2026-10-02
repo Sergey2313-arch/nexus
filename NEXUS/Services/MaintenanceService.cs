@@ -121,7 +121,11 @@ public static class MaintenanceService
         if (process.SessionId != current.SessionId || process.StartTime.ToUniversalTime() != candidate.StartedUtc || string.IsNullOrEmpty(path) || path.StartsWith(windows, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Процесс изменился или недоступен для этой операции. Обновите список.");
         process.Refresh(); long before = process.WorkingSet64;
-        if (!EmptyWorkingSet(process.Handle)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        using var handle = OpenProcess(0x0100 | 0x0400, false, candidate.Id); // SET_QUOTA | QUERY_INFORMATION
+        if (handle.IsInvalid) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        if (!GetProcessTimes(handle, out long created, out _, out _, out _)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        if (DateTime.FromFileTimeUtc(created) != candidate.StartedUtc) throw new InvalidOperationException("Процесс изменился. Обновите список.");
+        if (!EmptyWorkingSet(handle.DangerousGetHandle())) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         process.Refresh(); return (before, process.WorkingSet64);
     }
 
@@ -132,6 +136,11 @@ public static class MaintenanceService
         if (!EmptyWorkingSet(process.Handle)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         process.Refresh(); return (before, process.WorkingSet64);
     }
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern Microsoft.Win32.SafeHandles.SafeProcessHandle OpenProcess(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, int id);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetProcessTimes(Microsoft.Win32.SafeHandles.SafeProcessHandle process, out long created, out long exited, out long kernel, out long user);
     [DllImport("psapi.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool EmptyWorkingSet(IntPtr process);

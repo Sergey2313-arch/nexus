@@ -68,7 +68,7 @@ public sealed class SecurityScannerService
         ("Корреляция признаков", "")
     };
 
-    public async Task<DiagnosticResult> ScanAsync(IProgress<string> progress, CancellationToken cancellationToken)
+    public async Task<DiagnosticResult> ScanAsync(IProgress<string> progress, CancellationToken cancellationToken, IProgress<ScanStage>? stageProgress = null)
     {
         var result = new DiagnosticResult();
         for (int i = 0; i < Checks.Length; i++)
@@ -96,6 +96,7 @@ public sealed class SecurityScannerService
                     if (!string.IsNullOrWhiteSpace(output.Error))
                     {
                         result.Stages.Add(new(check.Name, false, output.Error));
+                        stageProgress?.Report(result.Stages[^1]);
                         continue;
                     }
                 }
@@ -103,6 +104,7 @@ public sealed class SecurityScannerService
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception ex) { result.Stages.Add(new(check.Name, false, ex.Message)); }
+            stageProgress?.Report(result.Stages[^1]);
         }
         return result;
     }

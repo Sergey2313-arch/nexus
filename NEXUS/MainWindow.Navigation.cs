@@ -14,6 +14,7 @@ public sealed partial class MainWindow
     private readonly List<SecurityFinding> _displayFindings = new();
     private bool _hasDiagnosticResult;
     private int _activeScanStage;
+    private readonly Dictionary<string, ScanStage> _completedScanStages = new();
     private static readonly string[] StageNames = { "Процессы", "Автозагрузка и задания", "Службы Windows", "Файлы", "Сетевые соединения", "Windows Defender", "Целостность и события", "Анализ признаков" };
 
     public sealed class StageCard
@@ -96,6 +97,7 @@ public sealed partial class MainWindow
     {
         _hasDiagnosticResult = false;
         _activeScanStage = 0;
+        _completedScanStages.Clear();
         _displayFindings.Clear();
         OverallHealthText.Text = SecurityHealthText.Text = HardwareHealthText.Text = "—";
         OverallHealthDetailText.Text = SecurityHealthDetailText.Text = HardwareHealthDetailText.Text = "Проверка выполняется";
@@ -110,13 +112,18 @@ public sealed partial class MainWindow
         SecurityScanStatusText.Text = status;
         if (status.Length > 2 && char.IsDigit(status[1])) _activeScanStage = status[1] - '0';
         SecurityScanProgress.Value = Math.Max(0, _activeScanStage - 1);
-        ScanStagesList.ItemsSource = StageNames.Select((name, i) => new StageCard
+        RenderScanStages();
+    }
+
+    private void RenderScanStages()
+    {
+        ScanStagesList.ItemsSource = StageNames.Select((name, i) =>
         {
-            Name = name,
-            Symbol = i + 1 == _activeScanStage ? "●" : i + 1 < _activeScanStage ? "·" : "○",
-            Details = i + 1 == _activeScanStage ? "Проверяется сейчас" : i + 1 < _activeScanStage ? "Этап обработан; результат появится в итогах" : "В очереди",
-            Accent = i + 1 == _activeScanStage ? Brush(0x69, 0xD4, 0xD0) : Brush(0x91, 0xA1, 0xB8)
+            if (_completedScanStages.TryGetValue(name, out var stage))
+                return new StageCard { Name = name, Symbol = stage.Completed ? "✓" : "!", Details = stage.Completed ? "Проверка выполнена" : "Частичная проверка: " + stage.Details, Accent = stage.Completed ? Brush(0x69, 0xD4, 0xD0) : Brush(0xFF, 0xC8, 0x57) };
+            return new StageCard { Name = name, Symbol = i + 1 == _activeScanStage ? "●" : "○", Details = i + 1 == _activeScanStage ? "Проверяется сейчас" : "В очереди", Accent = Brush(0x91, 0xA1, 0xB8) };
         }).ToList();
+        SecurityScanProgress.Value = _completedScanStages.Count;
     }
 
     private void ShowDiagnosticCards(DiagnosticResult result, HealthAssessment health, IReadOnlyList<HardwareReading> readings)
@@ -167,7 +174,7 @@ public sealed partial class MainWindow
     {
         OverallHealthDetailText.Text = SecurityHealthDetailText.Text = HardwareHealthDetailText.Text = message;
         ScanCoverageText.Text = "Проверка не завершена. Итоговая оценка не сформирована.";
-        ScanStagesList.ItemsSource = StageNames.Select((name, i) => new StageCard { Name = name, Symbol = "—", Details = i + 1 < _activeScanStage ? "Этап обработан; итог не сформирован" : "Проверка не завершена" }).ToList();
+        RenderScanStages();
         RefreshFindingCards();
         FindingsEmptyTitleText.Text = message;
     }
