@@ -38,9 +38,10 @@ namespace NEXUS
             mainWindow.InitializeTelemetryCharts();
             mainWindow.InitializeProcessTrustInspector();
 
-            // Последним применяем новый shell и локализацию, чтобы все динамические
-            // страницы и кнопки уже существовали в visual tree.
+            // Последними применяем новый shell, локализацию и визуальную полировку,
+            // когда весь динамический visual tree уже построен.
             mainWindow.InitializeModernInterface();
+            mainWindow.InitializeVisualPolish();
 
             _window = mainWindow;
             _window.Activate();
