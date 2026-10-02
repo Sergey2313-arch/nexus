@@ -26,6 +26,7 @@ public sealed partial class MainWindow
 
     public sealed class FindingCard
     {
+        public FindingResolution Resolution { get; init; } = new("manual", "Шаги решения", "");
         public string Label { get; init; } = "";
         public string Title { get; init; } = "";
         public string Evidence { get; init; } = "";
@@ -153,7 +154,7 @@ public sealed partial class MainWindow
         SecurityFindingsList.ItemsSource = filtered.Take(200).Select(f => new FindingCard
         {
             Label = f.Severity == "Critical" ? "КРИТИЧЕСКОЕ • " + f.Category : f.Severity == "Warning" ? "ТРЕБУЕТ ВНИМАНИЯ • " + f.Category : "СВЕДЕНИЯ • " + f.Category,
-            Title = f.Title, Evidence = f.Evidence, Recommendation = f.Recommendation,
+            Title = f.Title, Evidence = f.Evidence, Recommendation = f.Recommendation, Resolution = FindingResolver.Resolve(f),
             Accent = f.Severity == "Critical" ? Brush(0xFF, 0x75, 0x75) : f.Severity == "Warning" ? Brush(0xFF, 0xC8, 0x57) : Brush(0x91, 0xA1, 0xB8)
         }).ToList();
         FindingsCountText.Text = _hasDiagnosticResult ? $"Найдено: {_displayFindings.Count}. По фильтру: {filtered.Count}." + (filtered.Count > 200 ? " Показаны первые 200; полный список в отчёте." : "") : "Результаты появятся после проверки";

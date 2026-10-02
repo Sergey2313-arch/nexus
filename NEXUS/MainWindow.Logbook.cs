@@ -34,6 +34,7 @@ public sealed partial class MainWindow
         {
             var item = new RunningProcessItem { Name = process.ProcessName, ProcessId = process.Id, MemoryBytes = process.WorkingSet64, Details = process.MainWindowTitle ?? "" };
             item.Memory = FormatBytes(item.MemoryBytes);
+            try { if (process.MainWindowHandle != IntPtr.Zero && !process.Responding) item.State="Нет ответа"; } catch { }
             try
             {
                 item.StartedUtc = process.StartTime.ToUniversalTime();
@@ -71,7 +72,7 @@ public sealed partial class MainWindow
     private void OpenEventLocationButton_Click(object sender, RoutedEventArgs e) => OpenLocation(((Button)sender).Tag?.ToString() ?? "");
     private void OpenSelectedProcessLocationButton_Click(object sender, RoutedEventArgs e)
     {
-        if (RunningProcessesList.SelectedItem is RunningProcessItem item) OpenLocation(item.Path);
+        if (_selectedManagedProcess is RunningProcessItem item) OpenLocation(item.Path);
         else ProcessActionStatusText.Text = "Выберите процесс.";
     }
     private void OpenLocation(string path)
@@ -89,7 +90,7 @@ public sealed partial class MainWindow
     private async void EndSelectedProcessButton_Click(object sender, RoutedEventArgs e)
     {
         if (_processActionBusy) return;
-        if (RunningProcessesList.SelectedItem is not RunningProcessItem item) { ProcessActionStatusText.Text = "Выберите процесс."; return; }
+        if (_selectedManagedProcess is not RunningProcessItem item) { ProcessActionStatusText.Text = "Выберите процесс."; return; }
         _processActionBusy = true;
         try
         {

@@ -115,6 +115,10 @@ using (var assistant = new NEXUS.Services.AiAssistantService(mock))
 }
 Console.WriteLine("AI endpoint, payload and response contract checks passed.");
 
+Check(FindingResolver.Resolve(new("Warning","Hardware","Снижен ресурс накопителя: SSD","","" )).Id == "backup", "Worn SSD must get backup guidance, not fake repair");
+Check(FindingResolver.Resolve(new("Warning","Files","Неподписанный файл","","" )).Id == "defender-scan", "Unsigned files must get verification, not deletion");
+Check(FindingResolver.Resolve(new("Warning","Defender","Базы Defender устарели","","" )).Id == "defender-update", "Outdated definitions need the update action");
+
 sealed class AiFixtureHandler : System.Net.Http.HttpMessageHandler
 {
     public string Payload = "", Authorization = "";

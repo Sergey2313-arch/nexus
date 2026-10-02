@@ -49,7 +49,7 @@ namespace NEXUS
             // LOGBOOK UI
             // ============================================
 
-            RunningProcessesList.ItemsSource = _runningProcesses;
+            RunningProcessesList.ItemsSource = _processGroups;
             LogbookList.ItemsSource = _logbookItems;
 
             CategoryFilterComboBox.SelectedIndex = 0;
@@ -252,8 +252,8 @@ namespace NEXUS
                 };
                 _runningProcesses.Clear();
                 foreach (var process in sorted) _runningProcesses.Add(process);
-                if (selected != null) RunningProcessesList.SelectedItem = _runningProcesses.FirstOrDefault(p => p.ProcessId == selected.ProcessId && p.StartedUtc == selected.StartedUtc);
-                RunningProcessesCountText.Text = $"{processes.Count} процессов • показано {_runningProcesses.Count}";
+                RefreshProcessGroups();
+                RunningProcessesCountText.Text += $" • всего процессов {processes.Count}";
             }
             catch (Exception ex) { RunningProcessesCountText.Text = "Не удалось получить процессы: " + ex.Message; }
         }
@@ -573,6 +573,7 @@ namespace NEXUS
 
         public sealed class RunningProcessItem
         {
+            public string State { get; set; } = "Работает";
             public DateTime StartedUtc { get; set; }
             public string Path { get; set; } = "";
             public double CpuPercent { get; set; }
