@@ -46,6 +46,7 @@
                     <Button x:Name="SensorsNavButton" AutomationProperties.Name="Датчики" Style="{StaticResource NavButton}" Click="SensorsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="SensorsNavLabel" Text="Датчики"/></StackPanel></Button>
                     <Button x:Name="TemperaturesNavButton" AutomationProperties.Name="Температуры" Style="{StaticResource NavButton}" Click="TemperaturesButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9CA;" FontSize="18"/><TextBlock x:Name="TemperaturesNavLabel" Text="Температуры"/></StackPanel></Button>
                     <Button x:Name="MaintenanceNavButton" AutomationProperties.Name="Очистка" Style="{StaticResource NavButton}" Click="MaintenanceButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE74D;" FontSize="18"/><TextBlock x:Name="MaintenanceNavLabel" Text="Очистка"/></StackPanel></Button>
+                    <Button x:Name="AiNavButton" AutomationProperties.Name="ИИ-помощник" Style="{StaticResource NavButton}" Click="AiButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE99A;" FontSize="18"/><TextBlock x:Name="AiNavLabel" Text="ИИ-помощник"/></StackPanel></Button>
                     <Button x:Name="DiagnosticsNavButton" AutomationProperties.Name="Диагностика" Style="{StaticResource NavButton}" Click="DiagnosticsButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE9D9;" FontSize="18"/><TextBlock x:Name="DiagnosticsNavLabel" Text="Диагностика"/></StackPanel></Button>
                     <Button x:Name="LogbookNavButton" AutomationProperties.Name="Журнал событий" Style="{StaticResource NavButton}" Click="LogbookButton_Click"><StackPanel Orientation="Horizontal" Spacing="12"><FontIcon Glyph="&#xE8A5;" FontSize="18"/><TextBlock x:Name="LogbookNavLabel" Text="Журнал событий"/></StackPanel></Button>
                 </StackPanel></ScrollViewer>
@@ -633,6 +634,31 @@
                     <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="14"><TextBlock Text="Временные файлы пользователя" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="Только файлы в пользовательском Temp старше 7 дней. Перед удалением — объём и список. Занятые, изменённые файлы и ссылки пропускаются; документы и загрузки не очищаются." Style="{StaticResource MutedText}"/><TextBlock x:Name="TempPreviewText" Text="Сначала выполните анализ" FontSize="20"/><StackPanel Orientation="Horizontal" Spacing="12"><Button x:Name="AnalyzeTempButton" Content="Анализировать Temp" Click="AnalyzeTempButton_Click"/><Button x:Name="CleanTempButton" Content="Удалить выбранные временные файлы" Click="CleanTempButton_Click" IsEnabled="False"/></StackPanel><Expander Header="Файлы к удалению (первые 100)" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><TextBlock x:Name="TempFilesText" TextWrapping="Wrap" IsTextSelectionEnabled="True"/></Expander></StackPanel></Border>
                     <Button Content="Открыть параметры хранилища Windows" Click="WindowsStorageButton_Click"/>
                     <TextBlock x:Name="MaintenanceStatusText" Text="Действия выполняются только по нажатию кнопок" Style="{StaticResource MutedText}"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="AiView" Grid.Row="1" Visibility="Collapsed">
+                <StackPanel Margin="28" Spacing="20">
+                    <StackPanel Spacing="8"><TextBlock Text="ИИ-помощник" FontSize="32" FontWeight="Bold"/><TextBlock Text="Разбор проблем и встроенные задачи для вашего ПК" Style="{StaticResource MutedText}"/></StackPanel>
+                    <Expander Header="Подключить модель" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel Spacing="12">
+                        <TextBlock Text="Локальная модель через Ollama или совместимый API. Введите имя доступной модели; она не устанавливается автоматически." TextWrapping="Wrap"/>
+                        <TextBox x:Name="AiEndpointBox" Header="URL chat/completions" Text="http://localhost:11434/v1/chat/completions"/>
+                        <TextBox x:Name="AiModelBox" Header="Имя модели" PlaceholderText="Имя модели из вашего сервера"/>
+                        <PasswordBox x:Name="AiApiKeyBox" Header="API-ключ (для локальной модели обычно не нужен)"/>
+                        <CheckBox x:Name="AiShareContextCheckBox" Content="Передавать модели краткие показатели и названия проблем" IsChecked="False"/>
+                        <TextBlock Text="Запросы отправляются только по кнопке. Ключ хранится только в памяти этого окна. Без этой галочки отправляются лишь сообщения чата; пути файлов, команды процессов, сетевые адреса и буфер обмена в контекст ПК не включаются." Style="{StaticResource MutedText}" FontSize="12"/>
+                    </StackPanel></Expander>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="Чат с моделью" FontSize="23" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="AiChatText" Text="Настройте модель и задайте вопрос. Встроенные задачи ниже доступны и без подключения ИИ." TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                        <TextBox x:Name="AiQuestionBox" PlaceholderText="Например: почему тормозит ПК и что проверить?" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" MaxLength="4000"/>
+                        <StackPanel Orientation="Horizontal" Spacing="12"><Button x:Name="AiSendButton" Content="Спросить ИИ" Click="AiSendButton_Click"/><Button x:Name="AiCancelButton" Content="Отмена запроса" Click="AiCancelButton_Click" IsEnabled="False"/><Button x:Name="AiClearButton" Content="Очистить чат" Click="AiClearButton_Click"/></StackPanel>
+                        <TextBlock x:Name="AiStatusText" Text="Модель не подключена" Style="{StaticResource MutedText}"/>
+                    </StackPanel></Border>
+                    <Border Style="{StaticResource DiagnosticCard}"><StackPanel Spacing="12"><TextBlock Text="План действий по текущим данным" FontSize="23" FontWeight="SemiBold"/><Button Content="Обновить план" Click="AiRefreshPlanButton_Click"/><TextBlock x:Name="AiPlanText" Text="Нажмите «Обновить план» для локального анализа показателей. Это правила NEXUS, а не ответ модели." TextWrapping="Wrap"/></StackPanel></Border>
+                    <TextBlock Text="Выполнить задачу" FontSize="25" FontWeight="SemiBold"/>
+                    <TextBlock Text="Модель даёт объяснение. Эти кнопки запускают конкретные функции NEXUS; текст модели не выполняется как команда." Style="{StaticResource MutedText}"/>
+                    <ItemsControl x:Name="AssistantTasksList"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource DiagnosticCard}" Margin="0,0,0,12"><StackPanel Spacing="12"><TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="{Binding Details}" TextWrapping="Wrap"/><Button Content="{Binding ButtonText}" Tag="{Binding Id}" Click="AssistantTaskButton_Click"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    <TextBlock x:Name="AiTaskStatusText" Text="Действия ещё не запускались" Style="{StaticResource MutedText}"/>
                 </StackPanel>
             </ScrollViewer>
 

@@ -99,3 +99,29 @@ try
 }
 finally { System.IO.Directory.Delete(tempRoot, true); }
 Console.WriteLine("Temp preview, path boundary and cleanup revalidation checks passed.");
+
+Check(NEXUS.Services.AiAssistantService.ValidateEndpoint("http://localhost:11434/v1/chat/completions").IsLoopback, "Local HTTP endpoint should be accepted");
+try { NEXUS.Services.AiAssistantService.ValidateEndpoint("http://example.com/v1/chat/completions"); throw new Exception("Remote plaintext endpoint accepted"); }
+catch (ArgumentException) { }
+using (var mock = new AiFixtureHandler())
+using (var assistant = new NEXUS.Services.AiAssistantService(mock))
+{
+    string response = await assistant.AskAsync("https://example.com/v1/chat/completions", "test-model", "fixture-key", "CPU Temperature: 50", Array.Empty<NEXUS.Services.ChatTurn>(), "Почему тормозит?", CancellationToken.None);
+    Check(response == "Проверьте нагрузку", "AI response text should be decoded");
+    Check(mock.Payload.Contains("test-model") && !mock.Payload.Contains("fixture-key"), "API key must stay out of the request body");
+    Check(mock.Authorization == "Bearer fixture-key", "API authorization header missing");
+    using var payload = JsonDocument.Parse(mock.Payload);
+    Check(payload.RootElement.GetProperty("messages").GetArrayLength() == 3, "System/context/question chat contract is broken");
+}
+Console.WriteLine("AI endpoint, payload and response contract checks passed.");
+
+sealed class AiFixtureHandler : System.Net.Http.HttpMessageHandler
+{
+    public string Payload = "", Authorization = "";
+    protected override async Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken token)
+    {
+        Payload = await request.Content!.ReadAsStringAsync(token);
+        Authorization = request.Headers.Authorization?.ToString() ?? "";
+        return new(System.Net.HttpStatusCode.OK) { Content = new System.Net.Http.StringContent("{\"choices\":[{\"message\":{\"content\":\"Проверьте нагрузку\"}}]}") };
+    }
+}
