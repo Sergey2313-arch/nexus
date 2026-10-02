@@ -41,6 +41,7 @@ namespace NEXUS
             // Последними применяем новый shell, локализацию и визуальную полировку,
             // когда весь динамический visual tree уже построен.
             mainWindow.InitializeModernInterface();
+            mainWindow.InitializeLocalizationExtras();
             mainWindow.InitializeVisualPolish();
             mainWindow.InitializeDashboardOverview();
 
