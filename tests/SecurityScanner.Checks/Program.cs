@@ -48,7 +48,11 @@ System.IO.File.Delete(System.IO.Path.ChangeExtension(report, ".json"));
 
 if (OperatingSystem.IsWindows())
 {
-    var scripts = new[] { ExtendedChecks.Processes, ExtendedChecks.Startup, ExtendedChecks.Files, ExtendedChecks.Network, ExtendedChecks.Configuration };
+    var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+    var helper = (string)typeof(SecurityScannerService).GetField("FileAnalysis", flags)!.GetRawConstantValue()!;
+    var checks = ((string Name, string Script)[])typeof(SecurityScannerService).GetField("Checks", flags)!.GetValue(null)!;
+    var scripts = new System.Collections.Generic.List<string> { helper };
+    foreach (var check in checks) scripts.Add(helper + "\n" + check.Script);
     foreach (var script in scripts)
     {
         string command = "$errors=$null; $tokens=$null; [System.Management.Automation.Language.Parser]::ParseInput([System.Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('" + Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script)) + "')), [ref]$tokens, [ref]$errors) | Out-Null; if ($errors.Count) { $errors | Out-String | Write-Error; exit 1 }";
@@ -60,5 +64,13 @@ if (OperatingSystem.IsWindows())
         Check(process.ExitCode == 0, "PowerShell parser failed: " + await stderr);
         await stdout;
     }
+    var runner = typeof(SecurityScannerService).GetMethod("RunCheckAsync", flags)!;
+    string fixture = "[pscustomobject]@{Severity='Warning';Category='Test';Title='Тест';Evidence='path';Recommendation='check'}; throw 'fixture error'";
+    var task = (Task)runner.Invoke(null, new object[] { fixture, CancellationToken.None, 20 })!;
+    await task;
+    var output = task.GetType().GetProperty("Result")!.GetValue(task)!;
+    var collected = (System.Collections.Generic.List<SecurityFinding>)output.GetType().GetProperty("Findings")!.GetValue(output)!;
+    var failure = (string)output.GetType().GetProperty("Error")!.GetValue(output)!;
+    Check(collected.Count == 1 && collected[0].Title == "Тест" && failure.Contains("fixture error"), "PowerShell partial failure must preserve previous findings and Unicode");
 }
 Console.WriteLine("Hardware, report escaping, and PowerShell syntax checks passed.");
