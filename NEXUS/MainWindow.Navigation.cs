@@ -15,7 +15,7 @@ public sealed partial class MainWindow
     private bool _hasDiagnosticResult;
     private int _activeScanStage;
     private readonly Dictionary<string, ScanStage> _completedScanStages = new();
-    private static readonly string[] StageNames = { "Процессы", "Автозагрузка и задания", "Службы Windows", "Файлы", "Сетевые соединения", "Windows Defender", "Целостность и события", "Анализ признаков" };
+    private static readonly string[] StageNames = { "Процессы", "Автозагрузка", "Службы Windows", "Подозрительные файлы", "Сетевые соединения", "Windows Defender", "Настройки, целостность и события", "Корреляция признаков" };
 
     public sealed class StageCard
     {
