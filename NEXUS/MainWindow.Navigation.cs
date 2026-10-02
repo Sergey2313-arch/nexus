@@ -42,7 +42,7 @@ public sealed partial class MainWindow
         bool compactNavigation = e.NewSize.Width < 1000;
         SidebarColumn.Width = new GridLength(compactNavigation ? 88 : 220);
         BrandText.Text = compactNavigation ? "N" : "NEXUS";
-        foreach (var label in new FrameworkElement[] { BrandSubtitleText, NavCaptionText, OverviewNavLabel, DiagnosticsNavLabel, LogbookNavLabel, ComponentsNavLabel, SensorsNavLabel, TemperaturesNavLabel, MaintenanceNavLabel, AiNavLabel, SidebarFooter })
+        foreach (var label in new FrameworkElement[] { BrandSubtitleText, NavCaptionText, OverviewNavLabel, DiagnosticsNavLabel, LogbookNavLabel, ComponentsNavLabel, SensorsNavLabel, TemperaturesNavLabel, MaintenanceNavLabel, AiNavLabel, EventsNavLabel, SidebarFooter })
             label.Visibility = compactNavigation ? Visibility.Collapsed : Visibility.Visible;
         double contentWidth = e.NewSize.Width - SidebarColumn.Width.Value;
         bool stackCards = contentWidth < 700;
@@ -67,17 +67,17 @@ public sealed partial class MainWindow
 
     private void NavigateTo(string page)
     {
-        _isLogbookVisible = page == "logbook";
+        _isLogbookVisible = page == "logbook" || page == "events";
         DashboardView.Visibility = page == "overview" ? Visibility.Visible : Visibility.Collapsed;
         DiagnosticsView.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
-        LogbookView.Visibility = page == "logbook" ? Visibility.Visible : Visibility.Collapsed;
+        LogbookView.Visibility = (page == "logbook" || page == "events") ? Visibility.Visible : Visibility.Collapsed;
         AiView.Visibility = page == "ai" ? Visibility.Visible : Visibility.Collapsed;
         ComponentsView.Visibility = page == "components" ? Visibility.Visible : Visibility.Collapsed;
         SensorsView.Visibility = page == "sensors" ? Visibility.Visible : Visibility.Collapsed;
         TemperaturesView.Visibility = page == "temperatures" ? Visibility.Visible : Visibility.Collapsed;
         MaintenanceView.Visibility = page == "maintenance" ? Visibility.Visible : Visibility.Collapsed;
-        PageTitleText.Text = page switch { "overview" => "Обзор системы", "diagnostics" => "Диагностика", "components" => "Компоненты", "sensors" => "Датчики", "temperatures" => "Температуры", "maintenance" => "Очистка", "ai" => "ИИ-помощник", _ => "Журнал событий" };
-        foreach (var item in new[] { (OverviewNavButton, "overview"), (DiagnosticsNavButton, "diagnostics"), (LogbookNavButton, "logbook"), (ComponentsNavButton, "components"), (SensorsNavButton, "sensors"), (TemperaturesNavButton, "temperatures"), (MaintenanceNavButton, "maintenance"), (AiNavButton, "ai") })
+        PageTitleText.Text = page switch { "overview" => "Обзор системы", "diagnostics" => "Диагностика", "components" => "Компоненты", "sensors" => "Датчики", "temperatures" => "Температуры", "maintenance" => "Очистка", "ai" => "ИИ-помощник", "events" => "Журнал событий", _ => "Бортовой журнал" };
+        foreach (var item in new[] { (OverviewNavButton, "overview"), (DiagnosticsNavButton, "diagnostics"), (LogbookNavButton, "logbook"), (ComponentsNavButton, "components"), (SensorsNavButton, "sensors"), (TemperaturesNavButton, "temperatures"), (MaintenanceNavButton, "maintenance"), (AiNavButton, "ai"), (EventsNavButton, "events") })
         {
             item.Item1.Background = item.Item2 == page ? Brush(0x1C, 0x3A, 0x4B) : Brush(0x10, 0x17, 0x23);
             item.Item1.Foreground = item.Item2 == page ? Brush(0x69, 0xD4, 0xD0) : Brush(0xA7, 0xB5, 0xC8);

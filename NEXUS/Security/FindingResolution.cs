@@ -27,7 +27,9 @@ public static class FindingResolver
             if (title.Contains("UAC")) return new("uac", "Настроить UAC", "Открывает штатный интерфейс настройки контроля учётных записей.");
         }
         if (finding.Category == "Events") return new("events", "Изучить события входа", "Историческое событие нельзя отменить. Проверьте журнал Security и источник входов.");
-        if (finding.Category == "Startup" || finding.Category == "Tasks" || finding.Category == "Services") return new("persistence", "Проверить автозапуск", "Откроет инструменты Windows. Отключение неизвестной службы может нарушить работу приложений.");
+        if (finding.Category == "Services") return new("services", "Проверить службу", "Открывает управление службами Windows. Проверьте издателя, путь и назначение; не отключайте неизвестную службу автоматически.");
+        if (finding.Category == "Startup") return new("startup", "Проверить автозагрузку", "Открывает параметры автозагрузки Windows. Записи Run/RunOnce могут потребовать отдельной проверки в реестре.");
+        if (finding.Category == "Tasks") return new("persistence", "Проверить автозапуск", "Откроет инструменты Windows. Отключение неизвестной службы может нарушить работу приложений.");
         if (finding.Category == "Files" || finding.Category == "Processes" || finding.Category == "Network" || finding.Category == "Correlation") return new("defender-scan", "Проверить Defender", "Запускает быструю проверку Defender. Подозрительные признаки сами по себе не являются основанием для удаления файла.");
         return new("manual", "Показать шаги решения", finding.Recommendation);
     }

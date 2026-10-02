@@ -28,6 +28,8 @@ public sealed partial class MainWindow
                 case "defender": await Windows.System.Launcher.LaunchUriAsync(new Uri("windowsdefender:")); return;
                 case "uac": StartWindowsTool("UserAccountControlSettings.exe"); return;
                 case "events": StartWindowsTool("eventvwr.msc"); return;
+                case "services": StartWindowsTool("services.msc"); return;
+                case "startup": await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:startupapps")); return;
                 case "persistence": StartWindowsTool("taskschd.msc"); return;
                 case "backup":
                     await ShowResolutionSteps("Резервная копия и накопитель", "1. Скопируйте важные файлы на другой физический диск или в облачное хранилище.\n2. Проверьте, что копии открываются.\n3. Проверьте SMART утилитой производителя.\n4. При ухудшении ресурса планируйте замену накопителя. Программная очистка не восстанавливает износ."); return;

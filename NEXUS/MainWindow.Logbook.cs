@@ -14,6 +14,10 @@ public sealed partial class MainWindow
 {
     private readonly Dictionary<int, (DateTime Started, double Cpu, long Tick)> _processCpuSamples = new();
     private bool _processActionBusy;
+    private void EventHistoryNavButton_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateTo("events"); ShowEventHistoryButton_Click(sender, e); RefreshLogbook();
+    }
     private void ShowEventHistoryButton_Click(object sender, RoutedEventArgs e)
     {
         EventHistoryPanel.Visibility = LogFiltersPanel.Visibility = Visibility.Visible;

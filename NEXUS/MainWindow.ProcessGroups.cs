@@ -52,6 +52,7 @@ public sealed partial class MainWindow
         string path=group.Children[0].Path;
         if (string.IsNullOrEmpty(path) || path.StartsWith("\\\\",StringComparison.Ordinal)) return;
         if (_processIconCache.TryGetValue(path,out var cached)) { group.Icon=cached; return; }
+        if (_processIconCache.Count >= 128) return;
         try
         {
             var file=await StorageFile.GetFileFromPathAsync(path);
