@@ -109,6 +109,7 @@ public sealed partial class MainWindow
                 process.Kill(entireProcessTree: false);
                 return item.ProcessId;
             }), pid => $"Запрос завершения PID {pid} отправлен. Проверьте список процессов и загрузку памяти.");
+            if (_securityWindowClosed) return;
             ProcessActionStatusText.Text = $"Запрос завершения {item.Name} (PID {item.ProcessId}) отправлен.";
             _logService.Write("Process", "UserTerminate", "ProcessManager", "Пользователь завершил задачу", item.Name, processId: item.ProcessId);
             RefreshRunningProcesses();

@@ -197,6 +197,7 @@ var carried = DiagnosticComparison.PreserveUnverified(partialSnapshot, unavailab
 var healthySnapshot = new DiagnosticSnapshot(DateTime.UtcNow.AddMinutes(1), new(), new() { new("Подозрительные файлы", true, "") }, new() { new("CPU", "CPU Temperature", 55) });
 var noLongerObserved = DiagnosticComparison.Compare(carried, healthySnapshot);
 Check(noLongerObserved.Count == 2 && System.Linq.Enumerable.All(noLongerObserved, c => c.Status == "Больше не обнаружено"), "Unverified findings must survive partial scans until a covered comparison");
+Check(System.Linq.Enumerable.Any(DiagnosticComparison.Compare(beforeSnapshot, healthySnapshot with { Readings = new() { new("CPU", "CPU Temperature", 0) } }), c => c.Finding.Category == "Hardware" && c.Status == "Не удалось проверить"), "Zero temperature must not make an earlier overheating finding appear resolved");
 var changedEvidence = previousFile with { Evidence = @"c:\temp\APP.exe | Authenticode: NotSigned; SHA256=new" };
 var stillPresent = DiagnosticComparison.Compare(beforeSnapshot, healthySnapshot with { Findings = new() { changedEvidence } });
 Check(System.Linq.Enumerable.Any(stillPresent, c => c.Status == "Сохраняется" && c.Finding.Category == "Files"), "Changing hashes/case must not create false disappearance for the same file");

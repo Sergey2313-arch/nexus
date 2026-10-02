@@ -42,7 +42,7 @@ public static class DiagnosticComparison
         if (finding.Category == "Hardware")
         {
             string metric = finding.Title.Contains("ресурс", StringComparison.OrdinalIgnoreCase) ? "Storage Health" : finding.Title.Contains("места", StringComparison.OrdinalIgnoreCase) ? "Disk Used" : finding.Title.Contains("памяти", StringComparison.OrdinalIgnoreCase) ? "RAM Load" : finding.Evidence.Split(':')[0];
-            return snapshot.Readings.Any(r => r.Metric == metric && double.IsFinite(r.Value) && (metric == "RAM Load" || finding.Title.EndsWith(r.Device, StringComparison.Ordinal)));
+            return snapshot.Readings.Any(r => r.Metric == metric && double.IsFinite(r.Value) && (!metric.Contains("Temperature") || r.Value > 1) && (metric == "RAM Load" || finding.Title.EndsWith(r.Device, StringComparison.Ordinal)));
         }
         if (finding.Category == "Correlation") return new[] { "Процессы", "Автозагрузка", "Службы Windows", "Подозрительные файлы", "Сетевые соединения", "Корреляция признаков" }.All(name => snapshot.Stages.Any(s => s.Name == name && s.Completed));
         string? stage = finding.Category switch
