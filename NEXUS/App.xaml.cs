@@ -37,6 +37,7 @@ namespace NEXUS
             mainWindow.InitializeActivityInspector();
             mainWindow.InitializeTelemetryCharts();
             mainWindow.InitializeProcessTrustInspector();
+            mainWindow.InitializeMotherboardInspector();
 
             // Последними применяем новый shell, локализацию и визуальную полировку,
             // когда весь динамический visual tree уже построен.
