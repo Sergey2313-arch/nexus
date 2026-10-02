@@ -68,6 +68,11 @@ internal static class ExtendedChecks
         $dism = & "$env:windir\System32\dism.exe" /Online /Cleanup-Image /ScanHealth /English 2>&1 | Out-String
         $dismCode = $LASTEXITCODE
         [pscustomobject]@{Severity='Info';Category='Integrity';Title='DISM /ScanHealth: хранилище компонентов';Evidence=('ExitCode=' + $dismCode + '; ' + $dism.Trim());Recommendation='Оцените результат DISM. Восстановление /RestoreHealth автоматически не выполняется.'}
+        if ($dismCode -ne 0) { throw ('DISM завершился с кодом ' + $dismCode) }
+        if ($dism -match '(?i)component store is repairable|component store cannot be repaired') {
+            [pscustomobject]@{Severity='Warning';Category='Integrity';Title='DISM сообщил о повреждении хранилища компонентов';Evidence=$dism.Trim();Recommendation='Сделайте резервную копию и проверьте возможность восстановления средствами DISM. Ремонт не выполнялся.'}
+        }
+        if ($code -ne 0) { throw ('SFC завершился с кодом ' + $code + '; оцените сохранённый вывод') }
         $events = @(Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625,1102;StartTime=(Get-Date).AddDays(-7)} -MaxEvents 100 -ErrorAction SilentlyContinue -ErrorVariable auditError)
         if ($auditError -and $auditError[0].FullyQualifiedErrorId -notmatch 'NoMatchingEventsFound') { throw $auditError[0] }
         foreach ($event in $events | Where-Object Id -eq 1102) {

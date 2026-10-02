@@ -28,7 +28,7 @@ public sealed class SecurityScannerService
             if (-not $path) { return }
             $path = [Environment]::ExpandEnvironmentVariables($path)
             if ($path -match '^"([^\"]+)"') { $path = $Matches[1] }
-            elseif ($path -match '^(.+?\.(exe|dll|sys))(?=\s|$)') { $path = $Matches[1] }
+            elseif ($path -match '^(.+?\.(exe|dll|sys|ps1|vbs|js|bat|cmd))(?=\s|$)') { $path = $Matches[1] }
             if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
             $risky = $path.StartsWith($env:TEMP + '\', [StringComparison]::OrdinalIgnoreCase) -or $path.StartsWith($env:APPDATA + '\', [StringComparison]::OrdinalIgnoreCase)
             $systemName = [IO.Path]::GetFileName($path) -match '(?i)^(svchost|lsass|csrss|winlogon|services)\.exe$'
@@ -37,7 +37,10 @@ public sealed class SecurityScannerService
             if (-not $risky) { return }
             $sig = Get-AuthenticodeSignature -LiteralPath $path -ErrorAction Stop
             if ($sig.Status -ne 'Valid') {
-                [pscustomobject]@{ Severity='Warning'; Category=$category; Title='Файл в пользовательском каталоге без подтверждённой подписи'; Evidence=($path + ' | Authenticode: ' + $sig.Status); Recommendation='Проверьте происхождение файла и выполните проверку Defender. Этот признак сам по себе не доказывает заражение.' }
+                $file = Get-Item -LiteralPath $path -ErrorAction Stop
+                $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256 -ErrorAction Stop).Hash
+                $publisher = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { 'нет подписи' }
+                [pscustomobject]@{ Severity='Warning'; Category=$category; Title='Файл в пользовательском каталоге без подтверждённой подписи'; Evidence=($path + ' | Authenticode: ' + $sig.Status + '; Publisher=' + $publisher + '; SHA256=' + $hash + '; Created=' + $file.CreationTimeUtc.ToString('o')); Recommendation='Проверьте происхождение файла и выполните проверку Defender. Этот признак сам по себе не доказывает заражение.' }
             }
         }
         """;
